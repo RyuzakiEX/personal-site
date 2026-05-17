@@ -2,26 +2,42 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-navy-950 text-white font-futuristic;
+    background-image:
+      linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 212, 255, 0.015) 2px,
+        rgba(0, 212, 255, 0.015) 4px
+      );
+    background-size: 40px 40px, 40px 40px, auto;
   }
 }
 
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-@layer utilities {
-  .text-balance {
-    text-wrap: balance;
+@layer components {
+  .glass-card {
+    @apply bg-navy-900/60 backdrop-blur-md border border-navy-800 rounded-xl shadow-glow hover:shadow-glow-lg transition-all duration-300 hover:border-cyan-glow/50;
+  }
+  .glow-text {
+    @apply text-cyan-glow;
+    text-shadow: 0 0 8px rgba(0, 212, 255, 0.7);
+  }
+  .electric-badge {
+    @apply bg-blue-electric/20 border border-blue-electric/40 text-cyan-glow text-xs font-medium px-2.5 py-0.5 rounded-full;
+  }
+  .nav-tab {
+    @apply px-4 py-2 text-sm font-semibold tracking-widest uppercase transition-all duration-200 border-b-2 border-transparent;
+  }
+  .nav-tab-active {
+    @apply text-cyan-glow border-cyan-glow;
+    text-shadow: 0 0 6px rgba(0, 212, 255, 0.6);
   }
 }
