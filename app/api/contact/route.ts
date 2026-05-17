@@ -19,8 +19,8 @@ export async function POST(request: NextRequest) {
     const { name, email, subject, message } = parsed.data;
 
     const { data, error } = await resend.emails.send({
-      from: "Portfolio Contact <onboarding@resend.dev>",
-      to: ["jorge@mavrlab.com"],
+      from: `Portfolio Contact <${process.env.RESEND_EMAIL_FROM}>`,
+      to: [process.env.RESEND_EMAIL_TO!],
       replyTo: email,
       subject: `[Portfolio] ${subject}`,
       html: `
