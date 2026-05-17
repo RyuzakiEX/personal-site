@@ -24,9 +24,12 @@ export default function Experience() {
                 <h3 className="text-lg font-bold text-white">{exp.company}</h3>
                 <p className="text-cyan-glow font-medium">{exp.role}</p>
               </div>
-              <span className="text-gray-400 text-sm bg-navy-800/60 px-3 py-1 rounded-full">
-                {exp.period}
-              </span>
+              <div className="flex flex-col items-end gap-1">
+                <span className="text-gray-400 text-sm bg-navy-800/60 px-3 py-1 rounded-full">
+                  {exp.period}
+                </span>
+                <span className="text-gray-500 text-xs">{exp.type}</span>
+              </div>
             </div>
             <ul className="space-y-2">
               {exp.bullets.map((bullet, j) => (

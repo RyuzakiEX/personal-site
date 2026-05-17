@@ -2,48 +2,54 @@ export interface ExperienceEntry {
   company: string;
   role: string;
   period: string;
+  type: string;
   bullets: string[];
   stack: string[];
 }
 
 export const experiences: ExperienceEntry[] = [
   {
-    company: "Acme Technologies",
-    role: "Full Stack Developer",
-    period: "Jan 2023 – Present",
+    company: "MAVR Lab Pte Ltd",
+    role: "Full Stack Software Engineer",
+    period: "Mar 2026 – Present",
+    type: "Remote",
     bullets: [
-      "Architected a microservices platform serving 500K+ daily active users",
-      "Led migration from REST to GraphQL, reducing payload sizes by 40%",
-      "Built real-time dashboards using WebSockets and React Query",
-      "Deployed CI/CD pipelines on GitHub Actions, cutting deploy times by 60%",
-      "Mentored 3 junior developers through code review and pair programming",
+      "Developing and maintaining a full-stack web application using Next.js, Node.js, and TypeScript, focusing on scalability, performance, and seamless user experience",
+      "Building server-rendered and API-driven features to support dynamic, real-time application behavior",
+      "Integrating AI-driven capabilities using modern LLM platforms while maintaining abstraction and system flexibility",
+      "Implementing state management and responsive UI using Zustand and Tailwind CSS",
+      "Utilizing Payload CMS for role-based access control (RBAC) and system configuration, with ongoing improvements toward more advanced data retrieval architectures",
+      "Deploying and managing containerized services using Docker and AWS infrastructure",
     ],
-    stack: ["React", "Node.js", "GraphQL", "PostgreSQL", "AWS", "Docker"],
+    stack: ["Next.js", "Node.js", "TypeScript", "Zustand", "Tailwind CSS", "Payload CMS", "Docker", "AWS"],
   },
   {
-    company: "Nova Digital Agency",
-    role: "Frontend Developer",
-    period: "Jun 2021 – Dec 2022",
+    company: "Miller Solutions Development Inc.",
+    role: "Software Developer",
+    period: "Jun 2024 – Mar 2026",
+    type: "Hybrid",
     bullets: [
-      "Developed responsive web applications for 10+ enterprise clients",
-      "Improved Lighthouse performance scores from 60 to 95+ across all projects",
-      "Integrated third-party APIs including Stripe, Twilio, and Google Maps",
-      "Built a reusable component library adopted across 5 internal projects",
-      "Collaborated with UX designers to implement pixel-perfect interfaces",
+      "Developed and delivered client-facing web applications using Vue.js, Nuxt.js, and modern UI frameworks (Vuetify, PrimeVue, Nuxt UI)",
+      "Built and integrated RESTful APIs to support efficient frontend–backend communication",
+      "Designed and implemented an end-to-end object detection pipeline using Python and YOLO-based models for automated image processing",
+      "Developed a FastAPI backend to expose scalable AI inference services",
+      "Managed source control and collaborated across multiple projects using Git and Trello in a fast-paced environment",
     ],
-    stack: ["Next.js", "TypeScript", "Tailwind CSS", "Stripe", "Firebase"],
+    stack: ["Vue.js", "Nuxt.js", "Vuetify", "PrimeVue", "Python", "FastAPI", "YOLO", "Git"],
   },
   {
-    company: "ByteForge Solutions",
-    role: "Junior Developer",
-    period: "Jan 2020 – May 2021",
+    company: "Kyocera Document Solutions Development Inc.",
+    role: "Software Engineer",
+    period: "Mar 2023 – May 2024",
+    type: "Hybrid",
     bullets: [
-      "Built and maintained RESTful APIs consumed by mobile and web clients",
-      "Wrote unit and integration tests achieving 85% code coverage",
-      "Optimized slow database queries, reducing API response times by 35%",
-      "Participated in agile ceremonies and contributed to sprint planning",
-      "Refactored legacy jQuery codebase to a modern React SPA",
+      "Developed and maintained C/C++ firmware components for embedded printer systems, improving system reliability and device functionality",
+      "Integrated SOAP-based services to enable communication between embedded devices and external platforms",
+      "Debugged and validated firmware across simulators, virtual environments, and physical hardware",
+      "Managed code integration and version control using Perforce in a multi-developer environment",
+      "Collaborated with cross-functional teams using JIRA and Confluence for task tracking and technical documentation",
+      "Performed remote debugging, build management, and system troubleshooting",
     ],
-    stack: ["React", "Express.js", "MongoDB", "Jest", "MySQL"],
+    stack: ["C", "C++", "SOAP", "Perforce", "JIRA", "Confluence"],
   },
 ];
