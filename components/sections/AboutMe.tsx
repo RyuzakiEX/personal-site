@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import SocialIcon from "@/components/ui/SocialIcon";
@@ -51,10 +52,28 @@ export default function AboutMe() {
     <section className="space-y-12">
       {/* Hero */}
       <div className="text-center space-y-4 py-8">
+        {/* Profile picture */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.85 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex justify-center"
+        >
+          <div className="relative w-32 h-32 rounded-full border-2 border-cyan-glow/60 shadow-glow overflow-hidden">
+            <Image
+              src="/profile-picture.jpeg"
+              alt="Jorge Adanza"
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        </motion.div>
+
         <motion.h1
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
           className="text-5xl font-bold glow-text tracking-wider"
         >
           Jorge Adanza
@@ -86,7 +105,7 @@ export default function AboutMe() {
             <GithubIcon />
           </SocialIcon>
           <a
-            href="/cv.pdf"
+            href="/Jorge-Gabriel-Adrian-Adanza-CV-v3.pdf"
             download
             className="flex items-center gap-2 px-5 py-2.5 bg-cyan-glow/10 border border-cyan-glow/40 text-cyan-glow rounded-lg hover:bg-cyan-glow/20 hover:shadow-glow transition-all duration-200 text-sm font-semibold"
           >
