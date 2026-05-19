@@ -95,13 +95,16 @@ export default function AboutMe() {
           transition={{ delay: 0.5, duration: 0.4 }}
           className="flex justify-center items-center gap-4 pt-4 flex-wrap"
         >
-          <SocialIcon href="https://linkedin.com/in/jorgeadanza" label="LinkedIn">
+          <SocialIcon
+            href="https://linkedin.com/in/jorge-gabriel-adrian-adanza-770656193"
+            label="LinkedIn"
+          >
             <LinkedinIcon />
           </SocialIcon>
-          <SocialIcon href="https://wa.me/1234567890" label="WhatsApp">
+          <SocialIcon href="https://wa.me/+639380313106" label="WhatsApp">
             <WhatsappIcon />
           </SocialIcon>
-          <SocialIcon href="https://github.com/jorgeadanza" label="GitHub">
+          <SocialIcon href="https://github.com/RyuzakiEX" label="GitHub">
             <GithubIcon />
           </SocialIcon>
           <a
