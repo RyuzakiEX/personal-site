@@ -3,35 +3,23 @@ export interface ProjectEntry {
   description: string;
   stack: string[];
   url: string;
+  comingSoon?: boolean;
 }
 
 export const projects: ProjectEntry[] = [
   {
-    title: "NeuralDash",
+    title: "Personal Portfolio",
     description:
-      "Real-time analytics dashboard with AI-driven insights, customizable widget grid, and live data streaming.",
-    stack: ["Next.js", "TypeScript", "D3.js", "OpenAI API", "WebSockets"],
-    url: "https://github.com/jorgeadanza",
+      "My personal portfolio site built with Next.js and TypeScript, featuring animated transitions, a contact form, and a clean terminal-inspired UI.",
+    stack: ["Next.js", "TypeScript", "Tailwind CSS", "Framer Motion", "Vercel"],
+    url: "#",
+    comingSoon: true,
   },
   {
-    title: "ShopFlow",
+    title: "Blog App",
     description:
-      "Full-stack e-commerce platform with inventory management, Stripe payments, and an admin dashboard.",
-    stack: ["React", "Node.js", "PostgreSQL", "Stripe", "Redis"],
-    url: "https://github.com/jorgeadanza",
-  },
-  {
-    title: "TaskSync",
-    description:
-      "Collaborative project management tool with real-time updates, drag-and-drop boards, and team chat.",
-    stack: ["Next.js", "Socket.io", "Prisma", "MySQL", "Tailwind CSS"],
-    url: "https://github.com/jorgeadanza",
-  },
-  {
-    title: "DevLink",
-    description:
-      "Developer networking platform where engineers share projects, find collaborators, and post job listings.",
-    stack: ["React", "GraphQL", "MongoDB", "AWS S3", "JWT"],
-    url: "https://github.com/jorgeadanza",
+      "A multilingual blog platform with internationalization support, content management via Nuxt Studio, and a polished UI using NuxtUI.",
+    stack: ["Nuxt.js", "Vue", "NuxtUI", "Nuxt Content", "Nuxt Studio", "I18N", "Vercel"],
+    url: "https://blog-app-mu-blond.vercel.app/",
   },
 ];
