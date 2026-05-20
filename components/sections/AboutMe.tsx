@@ -9,6 +9,27 @@ import { experiences } from "@/data/experience";
 
 const TITLE = "Full Stack Developer";
 
+const MONTH_MAP: Record<string, number> = {
+  Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
+  Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
+};
+
+function getExperienceDuration(): string {
+  const starts = experiences.map((e) => {
+    const [mon, year] = e.period.split(" – ")[0].split(" ");
+    return new Date(parseInt(year), MONTH_MAP[mon]);
+  });
+  const earliest = new Date(Math.min(...starts.map((d) => d.getTime())));
+  const now = new Date();
+  const totalMonths =
+    (now.getFullYear() - earliest.getFullYear()) * 12 +
+    (now.getMonth() - earliest.getMonth());
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  if (months === 0) return `${years}+ years`;
+  return `${years}+ years`;
+}
+
 function GithubIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
@@ -93,9 +114,12 @@ export default function AboutMe() {
           transition={{ delay: 0.45, duration: 0.5 }}
           className="max-w-xl mx-auto text-gray-400 text-base leading-relaxed pt-2"
         >
-          I build fast, scalable web apps that people actually enjoy using —
-          from pixel-perfect UIs to solid backend APIs. I care about clean
-          architecture, performance, and shipping things that work.
+          A full-stack developer with{" "}
+          <span className="text-cyan-glow font-semibold">
+            {getExperienceDuration()}
+          </span>{" "}
+          of experience — building fast, scalable web apps that people actually
+          enjoy using, from pixel-perfect UIs to solid backend APIs.
         </motion.p>
 
         {/* Social + CV */}
