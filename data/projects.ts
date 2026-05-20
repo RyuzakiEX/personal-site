@@ -12,8 +12,7 @@ export const projects: ProjectEntry[] = [
     description:
       "My personal portfolio site built with Next.js and TypeScript, featuring animated transitions, a contact form, and a clean terminal-inspired UI.",
     stack: ["Next.js", "TypeScript", "Tailwind CSS", "Framer Motion", "Vercel"],
-    url: "#",
-    comingSoon: true,
+    url: "https://jorgeadanza.vercel.app/",
   },
   {
     title: "Blog App",
