@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Send, CheckCircle, XCircle } from "lucide-react";
+import { Send, CheckCircle, XCircle, MessageCircle } from "lucide-react";
 import { contactSchema, type ContactFormData } from "@/lib/validations";
 import Card from "@/components/ui/Card";
 
@@ -112,6 +112,23 @@ export default function Contact() {
           </button>
         </form>
       </Card>
+
+      <div className="flex items-center gap-3 p-4 bg-navy-950/80 border border-navy-800 rounded-lg">
+        <MessageCircle size={18} className="text-green-400 shrink-0" />
+        <div className="text-sm">
+          <p className="text-gray-400">
+            Prefer a quicker reply?{" "}
+            <a
+              href="https://wa.me/+639380313106"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-cyan-glow hover:underline font-medium"
+            >
+              Message me on WhatsApp
+            </a>
+          </p>
+        </div>
+      </div>
 
       {submitState === "success" && (
         <div className="flex items-center gap-3 p-4 bg-green-900/30 border border-green-500/40 rounded-lg text-green-400">
