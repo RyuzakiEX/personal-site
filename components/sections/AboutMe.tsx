@@ -5,8 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import SocialIcon from "@/components/ui/SocialIcon";
-import Card from "@/components/ui/Card";
-import { certificates } from "@/data/certificates";
+import { experiences } from "@/data/experience";
 
 const TITLE = "Full Stack Developer";
 
@@ -88,6 +87,17 @@ export default function AboutMe() {
           <span className="animate-flicker text-cyan-glow ml-0.5">|</span>
         </motion.p>
 
+        <motion.p
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.45, duration: 0.5 }}
+          className="max-w-xl mx-auto text-gray-400 text-base leading-relaxed pt-2"
+        >
+          I build fast, scalable web apps that people actually enjoy using —
+          from pixel-perfect UIs to solid backend APIs. I care about clean
+          architecture, performance, and shipping things that work.
+        </motion.p>
+
         {/* Social + CV */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -118,37 +128,34 @@ export default function AboutMe() {
         </motion.div>
       </div>
 
-      {/* Certificates */}
+      {/* Certificates — hidden for now
       <div>
         <h2 className="text-xl font-semibold text-gray-300 uppercase tracking-widest mb-6 border-l-2 border-cyan-glow pl-3">
           Certificates
         </h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {certificates.map((cert, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.6 + i * 0.1 }}
-            >
-              <a
-                href={cert.credentialUrl ?? "#"}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block h-full"
+        ...
+      </div>
+      */}
+
+      {/* Tech Stack */}
+      <div>
+        <h2 className="text-xl font-semibold text-gray-300 uppercase tracking-widest mb-6 border-l-2 border-cyan-glow pl-3">
+          Tech Stack
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {Array.from(new Set(experiences.flatMap((e) => e.stack))).map(
+            (tech, i) => (
+              <motion.span
+                key={tech}
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.6 + i * 0.04 }}
+                className="px-3 py-1.5 bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow text-sm rounded-full font-medium"
               >
-                <Card className="space-y-2 h-full hover:border-cyan-glow/60 cursor-pointer">
-                  <p className="font-semibold text-white text-sm leading-snug">
-                    {cert.title}
-                  </p>
-                  <p className="text-gray-400 text-xs">{cert.issuer}</p>
-                  <p className="text-cyan-glow text-xs font-medium">
-                    {cert.year}
-                  </p>
-                </Card>
-              </a>
-            </motion.div>
-          ))}
+                {tech}
+              </motion.span>
+            )
+          )}
         </div>
       </div>
     </section>
