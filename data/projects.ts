@@ -18,7 +18,22 @@ export const projects: ProjectEntry[] = [
     title: "Blog App",
     description:
       "A multilingual blog platform with internationalization support, content management via Nuxt Studio, and a polished UI using NuxtUI.",
-    stack: ["Nuxt.js", "Vue", "NuxtUI", "Nuxt Content", "Nuxt Studio", "I18N", "Vercel"],
+    stack: [
+      "Nuxt.js",
+      "Vue",
+      "NuxtUI",
+      "Nuxt Content",
+      "Nuxt Studio",
+      "I18N",
+      "Vercel",
+    ],
     url: "https://blog-app-mu-blond.vercel.app/",
+  },
+  {
+    title: "Buggy Wedding Proposal",
+    description:
+      'A playful wedding proposal app built for my girlfriend, posing the big yes-or-no question. Hover over "No" and it dodges away, and pressing "Yes" triggers a joyful celebration animation.',
+    stack: ["React", "Vercel"],
+    url: "https://ladyg-ryu-proposal.vercel.app/",
   },
 ];
