@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Send, CheckCircle, XCircle, MessageCircle } from "lucide-react";
 import { contactSchema, type ContactFormData } from "@/lib/validations";
 import Card from "@/components/ui/Card";
+import { triggerPulse } from "@/components/three/sceneState";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
@@ -31,6 +32,7 @@ export default function Contact() {
       });
       if (!res.ok) throw new Error("Failed");
       setSubmitState("success");
+      triggerPulse();
       reset();
       setTimeout(() => setSubmitState("idle"), 5000);
     } catch {

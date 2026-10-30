@@ -10,8 +10,16 @@ export const projects: ProjectEntry[] = [
   {
     title: "Personal Portfolio",
     description:
-      "My personal portfolio site built with Next.js and TypeScript, featuring animated transitions, a contact form, and a clean terminal-inspired UI.",
-    stack: ["Next.js", "TypeScript", "Tailwind CSS", "Framer Motion", "Vercel"],
+      "My personal portfolio site built with Next.js and TypeScript, featuring an interactive Three.js robot that follows your cursor and reacts to each section, smooth 3D page transitions, and a contact form.",
+    stack: [
+      "Next.js",
+      "TypeScript",
+      "Three.js",
+      "React Three Fiber",
+      "Tailwind CSS",
+      "Framer Motion",
+      "Vercel",
+    ],
     url: "https://jorgeadanza.vercel.app/",
   },
   {

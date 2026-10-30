@@ -27,6 +27,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${rajdhani.variable} ${exo2.variable}`}>
+      <head>
+        {/* Fetch the robot model alongside the page's JavaScript, not after it */}
+        <link
+          rel="preload"
+          href="/models/robot-expressive.glb"
+          as="fetch"
+          crossOrigin="anonymous"
+        />
+      </head>
       <body className="antialiased">{children}</body>
     </html>
   );
