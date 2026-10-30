@@ -1,12 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Send, CheckCircle, XCircle, MessageCircle } from "lucide-react";
 import { contactSchema, type ContactFormData } from "@/lib/validations";
 import Card from "@/components/ui/Card";
 import { react, setListening } from "@/components/three/sceneState";
+import { flipIn } from "@/lib/motion";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
@@ -52,78 +54,86 @@ export default function Contact() {
       <h2 className="text-2xl font-bold glow-text tracking-widest uppercase">
         Contact Me
       </h2>
-      <Card>
-        <form
-          onSubmit={handleSubmit(onSubmit, () => react("invalid"))}
-          onFocus={() => setListening(true)}
-          onBlur={() => setListening(false)}
-          className="space-y-4"
-        >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <input
-                {...register("name")}
-                placeholder="Name"
-                className={inputClass}
-              />
-              {errors.name && (
-                <p className="text-red-400 text-xs mt-1">
-                  {errors.name.message}
-                </p>
-              )}
-            </div>
-            <div>
-              <input
-                {...register("email")}
-                placeholder="Email"
-                type="email"
-                className={inputClass}
-              />
-              {errors.email && (
-                <p className="text-red-400 text-xs mt-1">
-                  {errors.email.message}
-                </p>
-              )}
-            </div>
-          </div>
-          <div>
-            <input
-              {...register("subject")}
-              placeholder="Subject"
-              className={inputClass}
-            />
-            {errors.subject && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.subject.message}
-              </p>
-            )}
-          </div>
-          <div>
-            <textarea
-              {...register("message")}
-              placeholder="Your message..."
-              rows={5}
-              className={`${inputClass} resize-none`}
-            />
-            {errors.message && (
-              <p className="text-red-400 text-xs mt-1">
-                {errors.message.message}
-              </p>
-            )}
-          </div>
-
-          <button
-            type="submit"
-            disabled={submitState === "loading"}
-            className="flex items-center gap-2 px-6 py-3 w-full justify-center bg-cyan-glow/10 border border-cyan-glow/50 text-cyan-glow rounded-lg hover:bg-cyan-glow/20 hover:shadow-glow disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-widest uppercase text-sm transition-all duration-200"
+      <motion.div variants={flipIn} initial="hidden" animate="visible" custom={0.25}>
+        <Card>
+          <form
+            onSubmit={handleSubmit(onSubmit, () => react("invalid"))}
+            onFocus={() => setListening(true)}
+            onBlur={() => setListening(false)}
+            className="space-y-4"
           >
-            <Send size={16} />
-            {submitState === "loading" ? "Sending..." : "Send Message"}
-          </button>
-        </form>
-      </Card>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <input
+                  {...register("name")}
+                  placeholder="Name"
+                  className={inputClass}
+                />
+                {errors.name && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {errors.name.message}
+                  </p>
+                )}
+              </div>
+              <div>
+                <input
+                  {...register("email")}
+                  placeholder="Email"
+                  type="email"
+                  className={inputClass}
+                />
+                {errors.email && (
+                  <p className="text-red-400 text-xs mt-1">
+                    {errors.email.message}
+                  </p>
+                )}
+              </div>
+            </div>
+            <div>
+              <input
+                {...register("subject")}
+                placeholder="Subject"
+                className={inputClass}
+              />
+              {errors.subject && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.subject.message}
+                </p>
+              )}
+            </div>
+            <div>
+              <textarea
+                {...register("message")}
+                placeholder="Your message..."
+                rows={5}
+                className={`${inputClass} resize-none`}
+              />
+              {errors.message && (
+                <p className="text-red-400 text-xs mt-1">
+                  {errors.message.message}
+                </p>
+              )}
+            </div>
 
-      <div className="flex items-center gap-3 p-4 bg-navy-950/80 border border-navy-800 rounded-lg">
+            <button
+              type="submit"
+              disabled={submitState === "loading"}
+              className="flex items-center gap-2 px-6 py-3 w-full justify-center bg-cyan-glow/10 border border-cyan-glow/50 text-cyan-glow rounded-lg hover:bg-cyan-glow/20 hover:shadow-glow disabled:opacity-50 disabled:cursor-not-allowed font-semibold tracking-widest uppercase text-sm transition-all duration-200"
+            >
+              <Send size={16} />
+              {submitState === "loading" ? "Sending..." : "Send Message"}
+            </button>
+          </form>
+        </Card>
+      </motion.div>
+
+      <motion.div
+        variants={flipIn}
+        initial="hidden"
+        animate="visible"
+        custom={0.4}
+        className="flex items-center gap-3 p-4 bg-navy-950/80 border border-navy-800 rounded-lg"
+      >
         <MessageCircle size={18} className="text-green-400 shrink-0" />
         <div className="text-sm">
           <p className="text-gray-400">
@@ -139,7 +149,7 @@ export default function Contact() {
             </a>
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {submitState === "success" && (
         <div className="flex items-center gap-3 p-4 bg-green-900/30 border border-green-500/40 rounded-lg text-green-400">
