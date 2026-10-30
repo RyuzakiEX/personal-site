@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import Badge from "@/components/ui/Badge";
-import { setHoveredProject } from "@/components/three/sceneState";
+import { react, setHoveredProject } from "@/components/three/sceneState";
 import { projects, type ProjectEntry } from "@/data/projects";
 import { useTilt } from "@/hooks/useTilt";
 
@@ -21,6 +21,7 @@ function ProjectCard({ project, index }: { project: ProjectEntry; index: number 
       transition={{ delay: index * 0.1, duration: 0.35 }}
       whileHover={{ scale: 1.03 }}
       style={{ rotateX, rotateY, transformPerspective: 900 }}
+      onClick={() => react(project.comingSoon ? "projectSoon" : "projectOpened")}
       onMouseEnter={() => setHoveredProject(index)}
       onMouseMove={onMouseMove}
       onMouseLeave={() => {

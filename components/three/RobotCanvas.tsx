@@ -70,12 +70,16 @@ interface RobotCanvasProps {
 
 export default function RobotCanvas({ activeTab, revealed, onReady }: RobotCanvasProps) {
   const container = useRef<HTMLDivElement>(null);
-  const pointer = useRef<PointerState>({ x: 0, y: 0, active: false });
+  const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, activeAt: performance.now() });
 
   // Track the cursor anywhere on the page, relative to the stage, so the
   // robot keeps watching while the visitor reads the content beside it.
   useEffect(() => {
+    const handleActivity = () => {
+      pointer.current.activeAt = performance.now();
+    };
     const handleMove = (e: PointerEvent) => {
+      handleActivity();
       const rect = container.current?.getBoundingClientRect();
       if (!rect) return;
       pointer.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
@@ -85,10 +89,13 @@ export default function RobotCanvas({ activeTab, revealed, onReady }: RobotCanva
     const handleLeave = () => {
       pointer.current.active = false;
     };
+    const activityEvents = ["pointerdown", "keydown", "wheel", "scroll"] as const;
     window.addEventListener("pointermove", handleMove);
+    for (const type of activityEvents) window.addEventListener(type, handleActivity, { passive: true });
     document.documentElement.addEventListener("pointerleave", handleLeave);
     return () => {
       window.removeEventListener("pointermove", handleMove);
+      for (const type of activityEvents) window.removeEventListener(type, handleActivity);
       document.documentElement.removeEventListener("pointerleave", handleLeave);
     };
   }, []);
