@@ -46,10 +46,15 @@ const config: Config = {
           "0%, 100%": { boxShadow: "0 0 8px 1px rgba(0,212,255,0.3)" },
           "50%": { boxShadow: "0 0 20px 4px rgba(0,212,255,0.6)" },
         },
+        "intro-bar": {
+          from: { transform: "translateX(-100%)" },
+          to: { transform: "translateX(300%)" },
+        },
       },
       animation: {
         flicker: "flicker 1s step-end infinite",
         "glow-pulse": "glow-pulse 2s ease-in-out infinite",
+        "intro-bar": "intro-bar 1.1s ease-in-out infinite",
       },
     },
   },
