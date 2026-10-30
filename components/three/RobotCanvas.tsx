@@ -1,12 +1,13 @@
 "use client";
 
-import { Suspense, useEffect, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer } from "@react-three/drei";
+import { easing } from "maath";
 import * as THREE from "three";
 import type { Tab } from "@/app/page";
 import Robot, { ROBOT_HEIGHT, type PointerState } from "./Robot";
-import { COLORS } from "./palette";
+import { COLORS, TAB_ACCENTS } from "./palette";
 
 const FOV = 30;
 // Space the camera keeps in frame around the robot, leaving room for raised arms.
@@ -20,22 +21,74 @@ const COMPACT_FRAME_WIDTH = 3;
 // shaders are compiled and the environment map is drawn.
 const READY_AFTER_FRAMES = 2;
 
-// Backs the camera off far enough to fit the robot in both directions,
-// whether the stage is a tall desktop column or the small mobile card.
-function FitCamera() {
-  const camera = useThree((state) => state.camera as THREE.PerspectiveCamera);
-  const { width, height } = useThree((state) => state.size);
+interface CameraPose {
+  /** Swing around the robot in radians. Positive moves the camera to the right. */
+  azimuth: number;
+  /** Camera height in world units. */
+  height: number;
+  /** Multiplier on the distance that fits the robot in frame. */
+  distance: number;
+  /** Height of the point the camera looks at. */
+  lookY: number;
+}
+type PoseKey = keyof CameraPose;
+const POSE_KEYS: PoseKey[] = ["azimuth", "height", "distance", "lookY"];
 
-  useEffect(() => {
+// Each tab views the robot from its own angle, kept within the head's turn
+// range so it can still look at the visitor.
+const TAB_POSES: Record<Tab, CameraPose> = {
+  about: { azimuth: 0, height: 0.2, distance: 1, lookY: 0 },
+  experience: { azimuth: -0.35, height: 0.7, distance: 1, lookY: 0 },
+  projects: { azimuth: 0.3, height: -1.1, distance: 1, lookY: 0.1 },
+  contact: { azimuth: -0.15, height: 0.5, distance: 0.85, lookY: 0.35 },
+};
+// Pulled back and above, so the camera dollies in as the page is revealed.
+const INTRO_POSE: CameraPose = { azimuth: 0.25, height: 1.6, distance: 1.6, lookY: 0 };
+// Roughly matches the content's exit and entrance.
+const CAMERA_SMOOTH = 0.45;
+const ACCENT_SMOOTH = 0.3;
+
+// Backs the camera off far enough to fit the robot in both directions,
+// whether the stage is a tall desktop column or the small mobile card, then
+// glides it to the active tab's pose. The small card stays front on, where an
+// angle would only crop the robot.
+function CameraRig({ activeTab, revealed }: { activeTab: Tab; revealed: boolean }) {
+  const { width, height } = useThree((state) => state.size);
+  const pose = useRef({ ...INTRO_POSE });
+  const compact = width <= COMPACT_MAX_WIDTH;
+
+  const fitDistance = useMemo(() => {
     const aspect = width / height;
-    const frameWidth = width <= COMPACT_MAX_WIDTH ? COMPACT_FRAME_WIDTH : FRAME_WIDTH;
+    const frameWidth = compact ? COMPACT_FRAME_WIDTH : FRAME_WIDTH;
     const vertical = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
-    const distance = Math.max(FRAME_HEIGHT / 2 / vertical, frameWidth / 2 / (vertical * aspect));
-    camera.position.set(0, 0.2, distance);
-    camera.lookAt(0, 0, 0);
-  }, [camera, width, height]);
+    return Math.max(FRAME_HEIGHT / 2 / vertical, frameWidth / 2 / (vertical * aspect));
+  }, [width, height, compact]);
+
+  useFrame(({ camera }, delta) => {
+    const goal = !revealed ? INTRO_POSE : compact ? TAB_POSES.about : TAB_POSES[activeTab];
+    const dt = Math.min(delta, 0.1);
+    for (const key of POSE_KEYS) easing.damp(pose.current, key, goal[key], CAMERA_SMOOTH, dt);
+    const { azimuth, distance, lookY } = pose.current;
+    const d = fitDistance * distance;
+    camera.position.set(Math.sin(azimuth) * d, pose.current.height, Math.cos(azimuth) * d);
+    camera.lookAt(0, lookY, 0);
+  });
 
   return null;
+}
+
+// Rim light from behind, tinted with the active tab's accent.
+function RimLight({ color }: { color: string }) {
+  const light = useRef<THREE.DirectionalLight>(null);
+  // Only the first color goes through props; a changing prop would snap the
+  // light instead of easing it.
+  const initialColor = useRef(color).current;
+
+  useFrame((_, delta) => {
+    if (light.current) easing.dampC(light.current.color, color, ACCENT_SMOOTH, Math.min(delta, 0.1));
+  });
+
+  return <directionalLight ref={light} position={[-3, 2, -4]} intensity={2.5} color={initialColor} />;
 }
 
 function ReadySignal({ onReady }: { onReady: () => void }) {
@@ -109,12 +162,11 @@ export default function RobotCanvas({ activeTab, revealed, onReady }: RobotCanva
         gl={{ alpha: true, antialias: true, powerPreference: "high-performance" }}
         resize={{ offsetSize: true }}
       >
-        <FitCamera />
+        <CameraRig activeTab={activeTab} revealed={revealed} />
         <StudioReflections />
         <ambientLight intensity={0.3} />
         <directionalLight position={[3, 5, 4]} intensity={1.4} />
-        {/* Cyan rim light from behind */}
-        <directionalLight position={[-3, 2, -4]} intensity={2.5} color={COLORS.cyan} />
+        <RimLight color={TAB_ACCENTS[activeTab]} />
         <Suspense fallback={null}>
           <Robot activeTab={activeTab} revealed={revealed} pointer={pointer} />
           <ContactShadows

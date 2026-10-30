@@ -1,3 +1,5 @@
+import type { Tab } from "@/app/page";
+
 // Mirrors the theme colors in tailwind.config.ts.
 export const COLORS = {
   navy950: "#0a0f1e",
@@ -7,3 +9,11 @@ export const COLORS = {
   cyan: "#00d4ff",
   electric: "#0066ff",
 } as const;
+
+// Each tab tints the robot's stage: its rim light, visor and the glow behind it.
+export const TAB_ACCENTS: Record<Tab, string> = {
+  about: COLORS.cyan,
+  experience: "#3d7bff",
+  projects: "#9b6bff",
+  contact: "#00e5a0",
+};

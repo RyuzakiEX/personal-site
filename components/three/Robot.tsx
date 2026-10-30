@@ -4,7 +4,7 @@ import { useCursor, useGLTF } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
 import type { Tab } from "@/app/page";
-import { COLORS } from "./palette";
+import { COLORS, TAB_ACCENTS } from "./palette";
 import { sceneState, type Reaction } from "./sceneState";
 
 // RobotExpressive by Tomás Laulhé (CC0 1.0), with expressions by Don McCurdy.
@@ -24,6 +24,8 @@ interface Act {
   gesture?: Gesture | "Idle";
   head?: HeadMotion;
   face?: Expression;
+  /** Performed once this act's gesture finishes. */
+  then?: Act;
 }
 
 // Played once when a tab opens.
@@ -33,6 +35,9 @@ const TAB_ACTS: Record<Tab, Act> = {
   projects: { gesture: "Jump", face: "Surprised" },
   contact: { gesture: "ThumbsUp", head: "nod" },
 };
+
+// Played once the visor has powered on, before the opening tab's act.
+const INTRO_ACT: Act = { gesture: "Jump", face: "Surprised" };
 
 const REACTIONS: Record<Reaction, Act> = {
   sent: { gesture: "Dance" },
@@ -120,6 +125,18 @@ const HEAD_MOTIONS: Record<HeadMotion, { time: number; pose: (u: number, side: n
   },
 };
 
+// When the page is revealed the visor blinks a few times, then fades up.
+const POWER_ON_TIME = 0.9;
+const VISOR_GLOW = 0.25;
+const ACCENT_SMOOTH = 0.3;
+
+// Visor brightness from 0 to 1 as the power-on runs, u from 0 to 1.
+function visorPower(u: number) {
+  if (u >= 1) return 1;
+  if (u < 0.5) return Math.floor(u * 8) % 2;
+  return THREE.MathUtils.smoothstep(u, 0.5, 1);
+}
+
 // How long a face is held, and how quickly it eases in and out.
 const FACE_TIME = 1.6;
 const FACE_SMOOTH = 0.12;
@@ -143,6 +160,15 @@ const LOOK_CHAIN: [bone: string, share: number][] = [
   ["Head", 0.4],
 ];
 
+// The face panel: a dark visor with a faint glow in the active tab's accent.
+const VISOR = new THREE.MeshStandardMaterial({
+  color: "#05080f",
+  roughness: 0.15,
+  metalness: 0.4,
+  emissive: COLORS.cyan,
+  emissiveIntensity: 0,
+});
+
 // Restyled from the model's yellow toy look to the site's palette.
 const MATERIALS: Record<string, THREE.Material> = {
   Main: new THREE.MeshPhysicalMaterial({
@@ -153,14 +179,7 @@ const MATERIALS: Record<string, THREE.Material> = {
     clearcoatRoughness: 0.2,
   }),
   Grey: new THREE.MeshStandardMaterial({ color: "#26314d", roughness: 0.35, metalness: 0.75 }),
-  // The face panel: a dark visor with a faint glow.
-  Black: new THREE.MeshStandardMaterial({
-    color: "#05080f",
-    roughness: 0.15,
-    metalness: 0.4,
-    emissive: COLORS.cyan,
-    emissiveIntensity: 0.25,
-  }),
+  Black: VISOR,
 };
 
 export interface PointerState {
@@ -199,6 +218,11 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
   const lastHovered = useRef(-1);
   const lastReaction = useRef(sceneState.reaction);
   const lastAct = useRef<Act | null>(null);
+  // Follows the gesture playing now.
+  const queued = useRef<Act | null>(null);
+  // Seconds since the page was revealed, and whether the intro has played.
+  const poweredFor = useRef(0);
+  const introduced = useRef(false);
   const pokes = useRef<number[]>([]);
   const lastIdle = useRef(0);
   const fidgetAt = useRef(fidgetDelay());
@@ -288,6 +312,9 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
       }
       if (act.head) headMotion.current = { motion: act.head, time: 0, side: Math.random() < 0.5 ? -1 : 1 };
       if (act.face) face.current = { name: act.face, left: FACE_TIME };
+      // A head motion or face plays over the current gesture, so it leaves
+      // whatever follows that gesture in place.
+      if (act.gesture || act.then) queued.current = act.then ?? null;
       lastAct.current = act;
     },
     [playGesture, settle]
@@ -304,21 +331,35 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     actions.Idle?.play();
     base.current = actions.Idle ?? null;
     const handleFinished = (e: { action: THREE.AnimationAction }) => {
-      if (e.action === gesture.current) settle(e.action);
+      if (e.action !== gesture.current) return;
+      const next = queued.current;
+      queued.current = null;
+      // A following gesture blends straight from this one.
+      if (!next?.gesture) settle(e.action);
+      if (next) perform(next);
     };
     mixer.addEventListener("finished", handleFinished);
     return () => {
       mixer.removeEventListener("finished", handleFinished);
       mixer.stopAllAction();
     };
-  }, [actions, mixer, settle]);
+  }, [actions, mixer, settle, perform]);
 
+  // The opening tab's act waits for the intro, which starts in the frame loop.
   useEffect(() => {
-    if (revealed) perform(TAB_ACTS[activeTab]);
-  }, [activeTab, revealed, perform]);
+    if (introduced.current) perform(TAB_ACTS[activeTab]);
+  }, [activeTab, perform]);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
+
+    if (revealed) poweredFor.current += dt;
+    VISOR.emissiveIntensity = VISOR_GLOW * visorPower(poweredFor.current / POWER_ON_TIME);
+    easing.dampC(VISOR.emissive, TAB_ACCENTS[activeTab], ACCENT_SMOOTH, dt);
+    if (!introduced.current && poweredFor.current >= POWER_ON_TIME) {
+      introduced.current = true;
+      perform({ ...INTRO_ACT, then: TAB_ACTS[activeTab] });
+    }
 
     // Pose the body from the animation, then layer the look-at turn on top of
     // whatever gesture is playing.
@@ -373,7 +414,7 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     if (idle < lastIdle.current) {
       fidgetAt.current = idle + fidgetDelay();
       if (sitting) perform(WAKE_ACT);
-    } else if (revealed && !gesture.current && !headMotion.current) {
+    } else if (introduced.current && !gesture.current && !headMotion.current) {
       if (idle > SIT_AFTER && !sitting && actions.Idle && actions.Sitting) {
         actions.Sitting.reset().setLoop(THREE.LoopOnce, 1);
         actions.Sitting.clampWhenFinished = true;
