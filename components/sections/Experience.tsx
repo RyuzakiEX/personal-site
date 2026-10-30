@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import { experiences } from "@/data/experience";
+import { flipIn } from "@/lib/motion";
 
 export default function Experience() {
   return (
@@ -14,9 +15,10 @@ export default function Experience() {
       {experiences.map((exp, i) => (
         <motion.div
           key={i}
-          initial={{ opacity: 0, x: -30 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: i * 0.15, duration: 0.4 }}
+          variants={flipIn}
+          initial="hidden"
+          animate="visible"
+          custom={0.25 + i * 0.15}
         >
           <Card className="space-y-4">
             <div className="flex justify-between items-start flex-wrap gap-2">

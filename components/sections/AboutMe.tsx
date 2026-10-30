@@ -6,6 +6,7 @@ import { motion } from "framer-motion";
 import { Download } from "lucide-react";
 import SocialIcon from "@/components/ui/SocialIcon";
 import { experiences } from "@/data/experience";
+import { flipIn } from "@/lib/motion";
 
 const TITLE = "Full Stack Developer";
 
@@ -171,10 +172,11 @@ export default function AboutMe() {
             (tech, i) => (
               <motion.span
                 key={tech}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.6 + i * 0.04 }}
-                className="px-3 py-1.5 bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow text-sm rounded-full font-medium"
+                variants={flipIn}
+                initial="hidden"
+                animate="visible"
+                custom={0.6 + i * 0.04}
+                className="inline-block px-3 py-1.5 bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow text-sm rounded-full font-medium"
               >
                 {tech}
               </motion.span>
