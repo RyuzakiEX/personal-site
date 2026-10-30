@@ -12,14 +12,24 @@ import { sceneState } from "./sceneState";
 export const ROBOT_URL = "/models/robot-expressive.glb";
 export const ROBOT_HEIGHT = 3;
 
-type Gesture = "Wave" | "Yes" | "ThumbsUp" | "Dance";
+type Gesture = "Wave" | "ThumbsUp" | "Dance";
 
-// Played once when a tab opens. Projects reacts to hover and Contact to a sent
-// message instead.
+// Played once when a tab opens. Experience nods the head instead (see nodPitch),
+// Projects reacts to hover and Contact to a sent message.
 const TAB_GESTURES: Partial<Record<Tab, Gesture>> = {
   about: "Wave",
-  experience: "Yes",
 };
+
+// Experience: nod the head down and up.
+const NODS = 2;
+const NOD_TIME = 1;
+const NOD_ANGLE = 0.35;
+
+// Each nod starts and ends at rest with zero speed, so it blends into the
+// cursor tracking without a jolt. Negative pitch tips the head down.
+function nodPitch(t: number) {
+  return -NOD_ANGLE * Math.sin((Math.PI * NODS * t) / NOD_TIME) ** 2;
+}
 
 const CROSSFADE = 0.3;
 // The plane between the robot and the camera that the cursor is projected onto.
@@ -80,8 +90,8 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
   const root = useRef<THREE.Group>(null);
   const gesture = useRef<THREE.AnimationAction | null>(null);
   const look = useRef({ yaw: 0, pitch: 0 });
-  // How much of the animation's own head motion to keep (see useFrame).
-  const headAnimation = useRef(0);
+  // Seconds into the Experience nod, or null when it isn't playing.
+  const nodTime = useRef<number | null>(null);
   const headAnchor = useRef<THREE.Vector3 | null>(null);
   const lastHovered = useRef(-1);
   const lastPulse = useRef(sceneState.pulseAt);
@@ -119,7 +129,6 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     () => ({
       target: new THREE.Vector3(),
       head: new THREE.Vector3(),
-      animated: new THREE.Quaternion(),
       ray: new THREE.Vector3(),
       parent: new THREE.Quaternion(),
       delta: new THREE.Quaternion(),
@@ -158,8 +167,10 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
   }, [actions, mixer]);
 
   useEffect(() => {
+    if (!revealed) return;
+    if (activeTab === "experience") nodTime.current = 0;
     const name = TAB_GESTURES[activeTab];
-    if (revealed && name) playGesture(name);
+    if (name) playGesture(name);
   }, [activeTab, revealed, playGesture]);
 
   useFrame((state, delta) => {
@@ -171,14 +182,17 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     mixer.update(dt);
 
     // The Idle clip turns the head to look around, which fights the cursor
-    // tracking. Drop the clip's head motion except while nodding, where the
-    // head movement is the gesture.
+    // tracking, so drop the clip's head motion.
     const { bone: headBone, rest: headRest } = bones[bones.length - 1];
     if (!headBone || !headRest) return;
-    const nodding = !!gesture.current && gesture.current === actions.Yes;
-    easing.damp(headAnimation, "current", nodding ? 1 : 0, 0.2, dt);
-    scratch.animated.copy(headBone.quaternion);
-    headBone.quaternion.copy(headRest).slerp(scratch.animated, headAnimation.current);
+    headBone.quaternion.copy(headRest);
+
+    let nod = 0;
+    if (nodTime.current !== null) {
+      nodTime.current += dt;
+      if (nodTime.current < NOD_TIME) nod = nodPitch(nodTime.current);
+      else nodTime.current = null;
+    }
 
     const hovered = activeTab === "projects" ? sceneState.hoveredProject : -1;
     if (hovered >= 0 && hovered !== lastHovered.current && !gesture.current) playGesture("ThumbsUp");
@@ -218,11 +232,12 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     easing.damp(look.current, "pitch", pitchGoal, LOOK_SMOOTH_TIME, dt);
 
     // Rotate each bone in world space (the robot faces +z), then convert back
-    // to its parent's space.
+    // to its parent's space. The Experience nod rides on top of the head's share.
     for (const { bone, share } of bones) {
       if (!bone?.parent) continue;
+      const extraPitch = bone === headBone ? nod : 0;
       scratch.yaw.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, look.current.yaw * share);
-      scratch.pitch.setFromAxisAngle(X_AXIS, -look.current.pitch * share);
+      scratch.pitch.setFromAxisAngle(X_AXIS, -(look.current.pitch * share + extraPitch));
       scratch.delta.multiplyQuaternions(scratch.yaw, scratch.pitch);
       bone.parent.updateWorldMatrix(true, false);
       bone.parent.getWorldQuaternion(scratch.parent);
