@@ -20,14 +20,15 @@ interface RobotStageProps {
 
 // The robot's own space. On large screens it is a sticky column beside the
 // content. On small screens it is a small frosted card pinned to the
-// bottom-left corner, letting taps through to the content underneath.
+// bottom-left corner, letting taps through to the content underneath. Only the
+// desktop column takes clicks, so the robot can be poked there.
 export default function RobotStage({ activeTab, enable3D, revealed, onReady }: RobotStageProps) {
   return (
     <aside
       aria-hidden
       className={cn(
         "pointer-events-none fixed bottom-4 left-4 z-40 h-32 w-24 overflow-hidden rounded-2xl border border-navy-800 bg-navy-950/80 shadow-glow backdrop-blur-md transition-opacity duration-700",
-        "lg:sticky lg:inset-auto lg:top-24 lg:z-auto lg:h-[calc(100vh-8rem)] lg:w-auto lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:backdrop-blur-none",
+        "lg:pointer-events-auto lg:sticky lg:inset-auto lg:top-24 lg:z-auto lg:h-[calc(100vh-8rem)] lg:w-auto lg:overflow-visible lg:rounded-none lg:border-0 lg:bg-transparent lg:shadow-none lg:backdrop-blur-none",
         revealed ? "opacity-100" : "opacity-0"
       )}
     >

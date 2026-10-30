@@ -1,35 +1,131 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
-import { useFrame } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useCursor, useGLTF } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
 import type { Tab } from "@/app/page";
 import { COLORS } from "./palette";
-import { sceneState } from "./sceneState";
+import { sceneState, type Reaction } from "./sceneState";
 
 // RobotExpressive by Tomás Laulhé (CC0 1.0), with expressions by Don McCurdy.
 // https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive
 export const ROBOT_URL = "/models/robot-expressive.glb";
 export const ROBOT_HEIGHT = 3;
 
-type Gesture = "Wave" | "ThumbsUp" | "Dance";
+type Gesture = "Wave" | "ThumbsUp" | "Dance" | "Jump";
+type HeadMotion = "nod" | "shake" | "glance";
+// Shape keys on the model's face.
+const EXPRESSIONS = ["Angry", "Surprised", "Sad"] as const;
+type Expression = (typeof EXPRESSIONS)[number];
 
-// Played once when a tab opens. Experience nods the head instead (see nodPitch),
-// Projects reacts to hover and Contact to a sent message.
-const TAB_GESTURES: Partial<Record<Tab, Gesture>> = {
-  about: "Wave",
+/** Something the robot does: a body clip, a head motion and a face, each optional. */
+interface Act {
+  /** "Idle" stops whatever gesture is playing. */
+  gesture?: Gesture | "Idle";
+  head?: HeadMotion;
+  face?: Expression;
+}
+
+// Played once when a tab opens.
+const TAB_ACTS: Record<Tab, Act> = {
+  about: { gesture: "Wave" },
+  experience: { head: "nod" },
+  projects: { gesture: "Jump", face: "Surprised" },
+  contact: { gesture: "ThumbsUp", head: "nod" },
 };
 
-// Experience: nod the head down and up.
-const NODS = 2;
-const NOD_TIME = 1;
-const NOD_ANGLE = 0.35;
+const REACTIONS: Record<Reaction, Act> = {
+  sent: { gesture: "Dance" },
+  failed: { head: "shake", face: "Sad" },
+  invalid: { head: "shake" },
+  projectOpened: { gesture: "Wave" },
+  projectSoon: { head: "shake", face: "Sad" },
+  chat: { gesture: "Wave" },
+};
 
-// Each nod starts and ends at rest with zero speed, so it blends into the
-// cursor tracking without a jolt. Negative pitch tips the head down.
-function nodPitch(t: number) {
-  return -NOD_ANGLE * Math.sin((Math.PI * NODS * t) / NOD_TIME) ** 2;
+const PROJECT_HOVER_ACT: Act = { gesture: "ThumbsUp" };
+
+// Clicking the robot. Too many pokes in a row make it cross.
+const POKE_ACTS: Act[] = [
+  { gesture: "Jump", face: "Surprised" },
+  { gesture: "Wave" },
+  { gesture: "ThumbsUp", head: "nod" },
+  { head: "nod", face: "Surprised" },
+];
+const ANNOYED_ACT: Act = { gesture: "Idle", head: "shake", face: "Angry" };
+const ANNOYED_POKES = 4;
+const POKE_WINDOW = 3;
+
+// Left alone, the robot fidgets now and then, and eventually sits down. It
+// jumps back up with a wave when the visitor returns. Times in seconds.
+const FIDGET_DELAY = { min: 6, max: 12 };
+const FIDGETS: Act[] = [
+  { head: "glance" },
+  { head: "glance" },
+  { gesture: "Wave" },
+  { gesture: "Jump" },
+  { gesture: "Dance" },
+];
+const SIT_AFTER = 30;
+const SIT_FADE = 0.8;
+// The Sitting clip folds the legs without lowering the body, so drop the
+// robot to sit it on the floor.
+const SIT_DROP = 0.5;
+const WAKE_ACT: Act = { gesture: "Wave", face: "Surprised" };
+
+function fidgetDelay() {
+  return THREE.MathUtils.randFloat(FIDGET_DELAY.min, FIDGET_DELAY.max);
 }
+
+// Picks a random act, avoiding a repeat of the last one.
+function pickAct(acts: Act[], last: Act | null) {
+  const options = acts.filter((act) => act !== last);
+  return options[Math.floor(Math.random() * options.length)];
+}
+
+interface HeadPose {
+  pitch: number;
+  yaw: number;
+}
+
+// Procedural head motions, layered on top of the cursor tracking (the model's
+// Yes and No clips pause before moving and fight the look-at turn). Each one
+// starts and ends at rest with zero speed, so it blends into the tracking
+// without a jolt. u runs from 0 to 1 and side is ±1. Negative pitch tips the
+// head down.
+const HEAD_MOTIONS: Record<HeadMotion, { time: number; pose: (u: number, side: number, out: HeadPose) => void }> = {
+  // Nod down and up twice.
+  nod: {
+    time: 1,
+    pose: (u, _side, out) => {
+      out.pitch = -0.35 * Math.sin(2 * Math.PI * u) ** 2;
+      out.yaw = 0;
+    },
+  },
+  // Shake side to side three times, widest in the middle.
+  shake: {
+    time: 1.2,
+    pose: (u, side, out) => {
+      out.pitch = 0;
+      out.yaw = side * 0.35 * Math.sin(6 * Math.PI * u) * Math.sin(Math.PI * u);
+    },
+  },
+  // Look off to one side, then the other, glancing up a little.
+  glance: {
+    time: 3.5,
+    pose: (u, side, out) => {
+      out.pitch = 0.15 * Math.sin(Math.PI * u) ** 2;
+      out.yaw = side * 0.7 * Math.sin(2 * Math.PI * u) * Math.sin(Math.PI * u);
+    },
+  },
+};
+
+// How long a face is held, and how quickly it eases in and out.
+const FACE_TIME = 1.6;
+const FACE_SMOOTH = 0.12;
+// The curious head tilt while the visitor fills in the contact form.
+const LISTEN_TILT = 0.2;
+const LISTEN_SMOOTH = 0.4;
 
 const CROSSFADE = 0.3;
 // The plane between the robot and the camera that the cursor is projected onto.
@@ -39,6 +135,7 @@ const MIN_PITCH = -0.5;
 const MAX_PITCH = 0.6;
 const LOOK_SMOOTH_TIME = 0.2;
 const X_AXIS = new THREE.Vector3(1, 0, 0);
+const Z_AXIS = new THREE.Vector3(0, 0, 1);
 // How the turn toward the cursor is spread from the chest up to the head.
 const LOOK_CHAIN: [bone: string, share: number][] = [
   ["Torso", 0.3],
@@ -71,6 +168,8 @@ export interface PointerState {
   x: number;
   y: number;
   active: boolean;
+  /** performance.now() of the visitor's last pointer, key or scroll input. */
+  activeAt: number;
 }
 
 interface RobotProps {
@@ -89,20 +188,32 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
   }, [scene, animations]);
   const root = useRef<THREE.Group>(null);
   const gesture = useRef<THREE.AnimationAction | null>(null);
+  // The looping clip under the gestures: Idle, or Sitting after a long idle.
+  const base = useRef<THREE.AnimationAction | null>(null);
   const look = useRef({ yaw: 0, pitch: 0 });
-  // Seconds into the Experience nod, or null when it isn't playing.
-  const nodTime = useRef<number | null>(null);
+  const headMotion = useRef<{ motion: HeadMotion; time: number; side: number } | null>(null);
+  const face = useRef<{ name: Expression; left: number } | null>(null);
+  const faceWeights = useRef<Record<Expression, number>>({ Angry: 0, Surprised: 0, Sad: 0 });
+  const tilt = useRef({ roll: 0 });
   const headAnchor = useRef<THREE.Vector3 | null>(null);
   const lastHovered = useRef(-1);
-  const lastPulse = useRef(sceneState.pulseAt);
+  const lastReaction = useRef(sceneState.reaction);
+  const lastAct = useRef<Act | null>(null);
+  const pokes = useRef<number[]>([]);
+  const lastIdle = useRef(0);
+  const fidgetAt = useRef(fidgetDelay());
+  const [hovered, setHovered] = useState(false);
+  useCursor(hovered);
 
   // Restyle, then scale and center the model to a known height.
-  const { fit, bones } = useMemo(() => {
+  const { fit, bones, faceMeshes } = useMemo(() => {
+    const faceMeshes: THREE.Mesh[] = [];
     scene.traverse((object) => {
       const mesh = object as THREE.Mesh;
       if (mesh.isMesh) {
         const material = mesh.material as THREE.Material;
         mesh.material = MATERIALS[material.name] ?? material;
+        if (mesh.morphTargetDictionary && mesh.morphTargetInfluences) faceMeshes.push(mesh);
       }
     });
     // Bones share names with meshes ("Head", "Torso"), so match bones only.
@@ -122,6 +233,7 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     return {
       fit: { scale, position: center.multiplyScalar(-scale) },
       bones,
+      faceMeshes,
     };
   }, [scene]);
 
@@ -130,10 +242,12 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
       target: new THREE.Vector3(),
       head: new THREE.Vector3(),
       ray: new THREE.Vector3(),
+      headPose: { pitch: 0, yaw: 0 } as HeadPose,
       parent: new THREE.Quaternion(),
       delta: new THREE.Quaternion(),
       yaw: new THREE.Quaternion(),
       pitch: new THREE.Quaternion(),
+      roll: new THREE.Quaternion(),
     }),
     []
   );
@@ -141,37 +255,67 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
   const playGesture = useCallback(
     (name: Gesture) => {
       const next = actions[name];
-      const from = gesture.current ?? actions.Idle;
+      const from = gesture.current ?? base.current;
       if (!next) return;
       next.reset().setLoop(THREE.LoopOnce, 1);
       next.clampWhenFinished = true;
       next.play();
-      if (from && from !== next) next.crossFadeFrom(from, CROSSFADE, false);
+      // Getting up from sitting takes a moment longer.
+      const fade = from === actions.Sitting ? SIT_FADE / 2 : CROSSFADE;
+      if (from && from !== next) next.crossFadeFrom(from, fade, false);
       gesture.current = next;
+      // Every gesture settles back into Idle, even one that interrupts sitting.
+      base.current = actions.Idle ?? null;
     },
     [actions]
   );
 
+  // Eases from a gesture back into Idle.
+  const settle = useCallback(
+    (from: THREE.AnimationAction) => {
+      actions.Idle?.reset().play().crossFadeFrom(from, CROSSFADE, false);
+      gesture.current = null;
+    },
+    [actions]
+  );
+
+  const perform = useCallback(
+    (act: Act) => {
+      if (act.gesture === "Idle") {
+        if (gesture.current) settle(gesture.current);
+      } else if (act.gesture) {
+        playGesture(act.gesture);
+      }
+      if (act.head) headMotion.current = { motion: act.head, time: 0, side: Math.random() < 0.5 ? -1 : 1 };
+      if (act.face) face.current = { name: act.face, left: FACE_TIME };
+      lastAct.current = act;
+    },
+    [playGesture, settle]
+  );
+
+  const poke = useCallback(() => {
+    const now = performance.now() / 1000;
+    pokes.current = pokes.current.filter((t) => now - t < POKE_WINDOW);
+    pokes.current.push(now);
+    perform(pokes.current.length >= ANNOYED_POKES ? ANNOYED_ACT : pickAct(POKE_ACTS, lastAct.current));
+  }, [perform]);
+
   useEffect(() => {
     actions.Idle?.play();
+    base.current = actions.Idle ?? null;
     const handleFinished = (e: { action: THREE.AnimationAction }) => {
-      if (e.action !== gesture.current || !actions.Idle) return;
-      actions.Idle.reset().play().crossFadeFrom(e.action, CROSSFADE, false);
-      gesture.current = null;
+      if (e.action === gesture.current) settle(e.action);
     };
     mixer.addEventListener("finished", handleFinished);
     return () => {
       mixer.removeEventListener("finished", handleFinished);
       mixer.stopAllAction();
     };
-  }, [actions, mixer]);
+  }, [actions, mixer, settle]);
 
   useEffect(() => {
-    if (!revealed) return;
-    if (activeTab === "experience") nodTime.current = 0;
-    const name = TAB_GESTURES[activeTab];
-    if (name) playGesture(name);
-  }, [activeTab, revealed, playGesture]);
+    if (revealed) perform(TAB_ACTS[activeTab]);
+  }, [activeTab, revealed, perform]);
 
   useFrame((state, delta) => {
     const dt = Math.min(delta, 0.1);
@@ -181,29 +325,70 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     for (const { bone, rest } of bones) if (bone && rest) bone.quaternion.copy(rest);
     mixer.update(dt);
 
+    // None of the clips use the face's shape keys, so the robot's expression is
+    // set here alone.
+    if (face.current) {
+      face.current.left -= dt;
+      if (face.current.left <= 0) face.current = null;
+    }
+    for (const name of EXPRESSIONS) {
+      easing.damp(faceWeights.current, name, face.current?.name === name ? 1 : 0, FACE_SMOOTH, dt);
+      for (const mesh of faceMeshes) {
+        const index = mesh.morphTargetDictionary![name];
+        if (index !== undefined) mesh.morphTargetInfluences![index] = faceWeights.current[name];
+      }
+    }
+
     // The Idle clip turns the head to look around, which fights the cursor
     // tracking, so drop the clip's head motion.
     const { bone: headBone, rest: headRest } = bones[bones.length - 1];
     if (!headBone || !headRest) return;
     headBone.quaternion.copy(headRest);
 
-    let nod = 0;
-    if (nodTime.current !== null) {
-      nodTime.current += dt;
-      if (nodTime.current < NOD_TIME) nod = nodPitch(nodTime.current);
-      else nodTime.current = null;
+    const { headPose } = scratch;
+    headPose.pitch = 0;
+    headPose.yaw = 0;
+    if (headMotion.current) {
+      const { motion, side } = headMotion.current;
+      const { time, pose } = HEAD_MOTIONS[motion];
+      headMotion.current.time += dt;
+      if (headMotion.current.time < time) pose(headMotion.current.time / time, side, headPose);
+      else headMotion.current = null;
+    }
+    easing.damp(tilt.current, "roll", sceneState.listening ? LISTEN_TILT : 0, LISTEN_SMOOTH, dt);
+
+    const hoveredProject = activeTab === "projects" ? sceneState.hoveredProject : -1;
+    if (hoveredProject >= 0 && hoveredProject !== lastHovered.current && !gesture.current) {
+      perform(PROJECT_HOVER_ACT);
+    }
+    lastHovered.current = hoveredProject;
+    if (sceneState.reaction !== lastReaction.current) {
+      lastReaction.current = sceneState.reaction;
+      if (sceneState.reaction) perform(REACTIONS[sceneState.reaction.name]);
     }
 
-    const hovered = activeTab === "projects" ? sceneState.hoveredProject : -1;
-    if (hovered >= 0 && hovered !== lastHovered.current && !gesture.current) playGesture("ThumbsUp");
-    lastHovered.current = hovered;
-    if (sceneState.pulseAt !== lastPulse.current) {
-      lastPulse.current = sceneState.pulseAt;
-      playGesture("Dance");
+    // Seconds since the visitor last did anything. It drops when they come back.
+    const idle = (performance.now() - pointer.current.activeAt) / 1000;
+    const sitting = base.current === actions.Sitting;
+    if (idle < lastIdle.current) {
+      fidgetAt.current = idle + fidgetDelay();
+      if (sitting) perform(WAKE_ACT);
+    } else if (revealed && !gesture.current && !headMotion.current) {
+      if (idle > SIT_AFTER && !sitting && actions.Idle && actions.Sitting) {
+        actions.Sitting.reset().setLoop(THREE.LoopOnce, 1);
+        actions.Sitting.clampWhenFinished = true;
+        actions.Sitting.play().crossFadeFrom(actions.Idle, SIT_FADE, false);
+        base.current = actions.Sitting;
+      } else if (idle > fidgetAt.current && !sitting) {
+        perform(pickAct(FIDGETS, lastAct.current));
+        fidgetAt.current = idle + fidgetDelay();
+      }
     }
+    lastIdle.current = idle;
 
     if (root.current) {
-      easing.damp(root.current.position, "y", revealed ? 0 : -0.6, 0.4, dt);
+      const restY = base.current === actions.Sitting ? -SIT_DROP : 0;
+      easing.damp(root.current.position, "y", revealed ? restY : -0.6, 0.4, dt);
     }
 
     const { target, head, ray } = scratch;
@@ -232,13 +417,18 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     easing.damp(look.current, "pitch", pitchGoal, LOOK_SMOOTH_TIME, dt);
 
     // Rotate each bone in world space (the robot faces +z), then convert back
-    // to its parent's space. The Experience nod rides on top of the head's share.
+    // to its parent's space. Head motions and the listening tilt ride on top
+    // of the head's share.
     for (const { bone, share } of bones) {
       if (!bone?.parent) continue;
-      const extraPitch = bone === headBone ? nod : 0;
-      scratch.yaw.setFromAxisAngle(THREE.Object3D.DEFAULT_UP, look.current.yaw * share);
-      scratch.pitch.setFromAxisAngle(X_AXIS, -(look.current.pitch * share + extraPitch));
-      scratch.delta.multiplyQuaternions(scratch.yaw, scratch.pitch);
+      const isHead = bone === headBone;
+      scratch.yaw.setFromAxisAngle(
+        THREE.Object3D.DEFAULT_UP,
+        look.current.yaw * share + (isHead ? headPose.yaw : 0)
+      );
+      scratch.pitch.setFromAxisAngle(X_AXIS, -(look.current.pitch * share + (isHead ? headPose.pitch : 0)));
+      scratch.roll.setFromAxisAngle(Z_AXIS, isHead ? tilt.current.roll : 0);
+      scratch.delta.multiplyQuaternions(scratch.yaw, scratch.pitch).multiply(scratch.roll);
       bone.parent.updateWorldMatrix(true, false);
       bone.parent.getWorldQuaternion(scratch.parent);
       bone.quaternion.premultiply(scratch.parent).premultiply(scratch.delta);
@@ -248,7 +438,17 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
 
   return (
     <group ref={root} position-y={-0.6}>
-      <primitive object={scene} scale={fit.scale} position={fit.position} />
+      <primitive
+        object={scene}
+        scale={fit.scale}
+        position={fit.position}
+        onClick={(e: ThreeEvent<MouseEvent>) => {
+          e.stopPropagation();
+          poke();
+        }}
+        onPointerOver={() => setHovered(true)}
+        onPointerOut={() => setHovered(false)}
+      />
     </group>
   );
 }

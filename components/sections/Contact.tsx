@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Send, CheckCircle, XCircle, MessageCircle } from "lucide-react";
 import { contactSchema, type ContactFormData } from "@/lib/validations";
 import Card from "@/components/ui/Card";
-import { triggerPulse } from "@/components/three/sceneState";
+import { react, setListening } from "@/components/three/sceneState";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
@@ -32,14 +32,17 @@ export default function Contact() {
       });
       if (!res.ok) throw new Error("Failed");
       setSubmitState("success");
-      triggerPulse();
+      react("sent");
       reset();
       setTimeout(() => setSubmitState("idle"), 5000);
     } catch {
       setSubmitState("error");
+      react("failed");
       setTimeout(() => setSubmitState("idle"), 5000);
     }
   };
+
+  useEffect(() => () => setListening(false), []);
 
   const inputClass =
     "w-full bg-navy-950/80 border border-navy-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-cyan-glow/60 focus:shadow-glow transition-all duration-200";
@@ -50,7 +53,12 @@ export default function Contact() {
         Contact Me
       </h2>
       <Card>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        <form
+          onSubmit={handleSubmit(onSubmit, () => react("invalid"))}
+          onFocus={() => setListening(true)}
+          onBlur={() => setListening(false)}
+          className="space-y-4"
+        >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <input
@@ -124,6 +132,7 @@ export default function Contact() {
               href="https://wa.me/+639380313106"
               target="_blank"
               rel="noopener noreferrer"
+              onClick={() => react("chat")}
               className="text-cyan-glow hover:underline font-medium"
             >
               Message me on WhatsApp
