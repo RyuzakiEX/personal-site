@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic";
 import type { Tab } from "@/app/page";
 import { cn } from "@/lib/utils";
+import { TAB_ACCENTS } from "@/components/three/palette";
 
 // Start downloading the 3D code as soon as this module loads, not after hydration.
 const loadRobotCanvas = () => import("@/components/three/RobotCanvas");
@@ -32,7 +33,18 @@ export default function RobotStage({ activeTab, enable3D, revealed, onReady }: R
         revealed ? "opacity-100" : "opacity-0"
       )}
     >
-      <div className="absolute inset-0 bg-[radial-gradient(closest-side,rgba(0,212,255,0.14),transparent)]" />
+      {/* One glow per tab, crossfaded, since gradients can't be transitioned. */}
+      {(Object.entries(TAB_ACCENTS) as [Tab, string][]).map(([tab, color]) => (
+        <div
+          key={tab}
+          className={cn(
+            "absolute inset-0 transition-opacity duration-700",
+            tab === activeTab ? "opacity-100" : "opacity-0"
+          )}
+          // 24 is the hex for 14% alpha.
+          style={{ backgroundImage: `radial-gradient(closest-side, ${color}24, transparent)` }}
+        />
+      ))}
 
       {enable3D && <RobotCanvas activeTab={activeTab} revealed={revealed} onReady={onReady} />}
       {enable3D === false && (
