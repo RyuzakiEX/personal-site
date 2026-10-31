@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -12,8 +12,15 @@ import { flipIn } from "@/lib/motion";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
+const GENERIC_ERROR = "Something went wrong. Please try again.";
+
 export default function Contact() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
+  const [errorMessage, setErrorMessage] = useState(GENERIC_ERROR);
+  // Spam checks: the API drops forms that fill the hidden field or arrive too
+  // soon after this token was issued.
+  const honeypotRef = useRef<HTMLInputElement>(null);
+  const tokenRef = useRef<string>();
 
   const {
     register,
@@ -26,18 +33,29 @@ export default function Contact() {
 
   const onSubmit = async (data: ContactFormData) => {
     setSubmitState("loading");
+    let error = GENERIC_ERROR;
     try {
       const res = await fetch("/api/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          hp_check: honeypotRef.current?.value,
+          token: tokenRef.current,
+        }),
       });
-      if (!res.ok) throw new Error("Failed");
+      if (!res.ok) {
+        // Show the API's reason, such as the rate limit, when it gives one.
+        const body = await res.json().catch(() => null);
+        if (typeof body?.error === "string") error = body.error;
+        throw new Error(error);
+      }
       setSubmitState("success");
       react("sent");
       reset();
       setTimeout(() => setSubmitState("idle"), 5000);
     } catch {
+      setErrorMessage(error);
       setSubmitState("error");
       react("failed");
       setTimeout(() => setSubmitState("idle"), 5000);
@@ -45,6 +63,16 @@ export default function Contact() {
   };
 
   useEffect(() => () => setListening(false), []);
+
+  useEffect(() => {
+    fetch("/api/contact", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((body) => {
+        tokenRef.current = body.token;
+      })
+      // Without a token the API asks the visitor to refresh, so nothing to do.
+      .catch(() => {});
+  }, []);
 
   const inputClass =
     "w-full bg-navy-950/80 border border-navy-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-cyan-glow/60 focus:shadow-glow transition-all duration-200";
@@ -62,6 +90,18 @@ export default function Contact() {
             onBlur={() => setListening(false)}
             className="space-y-4"
           >
+            {/* Honeypot: bots fill every input they find in the markup. It's
+                display:none and has a name autofill doesn't recognize, so
+                browsers and password managers leave it empty. */}
+            <div hidden>
+              <input
+                ref={honeypotRef}
+                type="text"
+                name="hp_check"
+                tabIndex={-1}
+                autoComplete="off"
+              />
+            </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <input
@@ -160,7 +200,7 @@ export default function Contact() {
       {submitState === "error" && (
         <div className="flex items-center gap-3 p-4 bg-red-900/30 border border-red-500/40 rounded-lg text-red-400">
           <XCircle size={18} />
-          Something went wrong. Please try again.
+          {errorMessage}
         </div>
       )}
     </section>
