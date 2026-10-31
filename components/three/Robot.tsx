@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useFrame, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useCursor, useGLTF } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
@@ -11,6 +11,8 @@ import { sceneState, type Reaction } from "./sceneState";
 // https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive
 export const ROBOT_URL = "/models/robot-expressive.glb";
 export const ROBOT_HEIGHT = 3;
+// Stages up to this wide are the small mobile card.
+export const COMPACT_MAX_WIDTH = 240;
 
 type Gesture = "Wave" | "ThumbsUp" | "Dance" | "Jump";
 type HeadMotion = "nod" | "shake" | "glance";
@@ -60,6 +62,21 @@ const POKE_ACTS: Act[] = [
 const ANNOYED_ACT: Act = { gesture: "Idle", head: "shake", face: "Angry" };
 const ANNOYED_POKES = 4;
 const POKE_WINDOW = 3;
+// A light buzz when the robot is tapped, on phones that support it. Milliseconds.
+const POKE_BUZZ = 10;
+
+// On touch screens the robot looks up as the page slides up past it, and
+// down as it slides back. Speeds in pixels per second.
+const SCROLL_LOOK_SPEED = 1500;
+const SCROLL_PITCH = 0.3;
+const SCROLL_SMOOTH = 0.15;
+// A hard flick startles it, at most once per cooldown.
+const FLICK_SPEED = 4000;
+const FLICK_COOLDOWN = 5;
+const FLICK_ACT: Act = { face: "Surprised" };
+// The page glides back to the top on a tab change, which isn't the visitor
+// scrolling, so scrolling is ignored for a moment after one.
+const TAB_SCROLL_MUTE = 1.5;
 
 // Left alone, the robot fidgets now and then, and eventually sits down. It
 // jumps back up with a wave when the visitor returns. Times in seconds.
@@ -189,6 +206,10 @@ export interface PointerState {
   active: boolean;
   /** performance.now() of the visitor's last pointer, key or scroll input. */
   activeAt: number;
+  /** performance.now() until which the robot looks at the last tap on a touch screen. */
+  lookUntil: number;
+  /** window.scrollY, tracked on touch screens only. */
+  scrollY: number;
 }
 
 interface RobotProps {
@@ -226,8 +247,13 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
   const pokes = useRef<number[]>([]);
   const lastIdle = useRef(0);
   const fidgetAt = useRef(fidgetDelay());
+  const lastScrollY = useRef<number | null>(null);
+  const scrollSpeed = useRef({ value: 0 });
+  const scrollMutedUntil = useRef(0);
+  const flickReadyAt = useRef(0);
   const [hovered, setHovered] = useState(false);
   useCursor(hovered);
+  const compact = useThree((state) => state.size.width <= COMPACT_MAX_WIDTH);
 
   // Restyle, then scale and center the model to a known height.
   const { fit, bones, faceMeshes } = useMemo(() => {
@@ -327,6 +353,13 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     perform(pokes.current.length >= ANNOYED_POKES ? ANNOYED_ACT : pickAct(POKE_ACTS, lastAct.current));
   }, [perform]);
 
+  // The mobile card is too small to aim at the robot, so a tap anywhere on it
+  // pokes.
+  const tap = useCallback(() => {
+    navigator.vibrate?.(POKE_BUZZ);
+    poke();
+  }, [poke]);
+
   useEffect(() => {
     actions.Idle?.play();
     base.current = actions.Idle ?? null;
@@ -347,6 +380,7 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
 
   // The opening tab's act waits for the intro, which starts in the frame loop.
   useEffect(() => {
+    scrollMutedUntil.current = performance.now() / 1000 + TAB_SCROLL_MUTE;
     if (introduced.current) perform(TAB_ACTS[activeTab]);
   }, [activeTab, perform]);
 
@@ -439,7 +473,7 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
     if (!headAnchor.current) headAnchor.current = head.clone();
     easing.damp3(headAnchor.current, head, 0.6, dt);
     head.copy(headAnchor.current);
-    if (p.active) {
+    if (p.active || performance.now() < p.lookUntil) {
       const camera = state.camera;
       ray.set(p.x, p.y, 0.5).unproject(camera).sub(camera.position).normalize();
       target.copy(camera.position).addScaledVector(ray, (LOOK_PLANE_Z - camera.position.z) / ray.z);
@@ -448,9 +482,23 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
       target.copy(state.camera.position);
     }
     target.sub(head);
+
+    // scrollY only moves on touch screens, so elsewhere this stays at rest.
+    const now = performance.now() / 1000;
+    const scrolled = p.scrollY - (lastScrollY.current ?? p.scrollY);
+    lastScrollY.current = p.scrollY;
+    const scrollGoal = now < scrollMutedUntil.current || dt === 0 ? 0 : scrolled / dt;
+    easing.damp(scrollSpeed.current, "value", scrollGoal, SCROLL_SMOOTH, dt);
+    const speed = scrollSpeed.current.value;
+    if (Math.abs(speed) > FLICK_SPEED && !face.current && now > flickReadyAt.current) {
+      perform(FLICK_ACT);
+      flickReadyAt.current = now + FLICK_COOLDOWN;
+    }
+    const scrollPitch = THREE.MathUtils.clamp(speed / SCROLL_LOOK_SPEED, -1, 1) * SCROLL_PITCH;
+
     const yawGoal = THREE.MathUtils.clamp(Math.atan2(target.x, target.z), -MAX_YAW, MAX_YAW);
     const pitchGoal = THREE.MathUtils.clamp(
-      Math.atan2(target.y, Math.hypot(target.x, target.z)),
+      Math.atan2(target.y, Math.hypot(target.x, target.z)) + scrollPitch,
       MIN_PITCH,
       MAX_PITCH
     );
@@ -485,8 +533,10 @@ export default function Robot({ activeTab, revealed, pointer }: RobotProps) {
         position={fit.position}
         onClick={(e: ThreeEvent<MouseEvent>) => {
           e.stopPropagation();
-          poke();
+          if (compact) tap();
+          else poke();
         }}
+        onPointerMissed={compact ? tap : undefined}
         onPointerOver={() => setHovered(true)}
         onPointerOut={() => setHovered(false)}
       />

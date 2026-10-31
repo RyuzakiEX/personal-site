@@ -6,7 +6,7 @@ import { ContactShadows, Environment, Lightformer } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
 import type { Tab } from "@/app/page";
-import Robot, { ROBOT_HEIGHT, type PointerState } from "./Robot";
+import Robot, { COMPACT_MAX_WIDTH, ROBOT_HEIGHT, type PointerState } from "./Robot";
 import { COLORS, TAB_ACCENTS } from "./palette";
 
 const FOV = 30;
@@ -15,8 +15,9 @@ const FRAME_HEIGHT = ROBOT_HEIGHT + 0.8;
 const FRAME_WIDTH = 4;
 // The small mobile card frames tighter so the robot isn't tiny; raised arms
 // may brush its edges.
-const COMPACT_MAX_WIDTH = 240;
 const COMPACT_FRAME_WIDTH = 3;
+// How long the robot keeps looking at a tap, in milliseconds.
+const TAP_LOOK_TIME = 2500;
 // Frames to render after the model mounts before reporting ready, so its
 // shaders are compiled and the environment map is drawn.
 const READY_AFTER_FRAMES = 2;
@@ -123,33 +124,59 @@ interface RobotCanvasProps {
 
 export default function RobotCanvas({ activeTab, revealed, onReady }: RobotCanvasProps) {
   const container = useRef<HTMLDivElement>(null);
-  const pointer = useRef<PointerState>({ x: 0, y: 0, active: false, activeAt: performance.now() });
+  const pointer = useRef<PointerState>({
+    x: 0,
+    y: 0,
+    active: false,
+    activeAt: performance.now(),
+    lookUntil: 0,
+    scrollY: 0,
+  });
 
   // Track the cursor anywhere on the page, relative to the stage, so the
   // robot keeps watching while the visitor reads the content beside it.
+  // Touch screens have no cursor, so there the robot looks at each tap for a
+  // moment and follows the page as it scrolls.
   useEffect(() => {
+    const touchScreen = window.matchMedia("(hover: none)").matches;
+    const aim = (e: PointerEvent) => {
+      const rect = container.current?.getBoundingClientRect();
+      if (!rect) return false;
+      pointer.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.current.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
+      return true;
+    };
     const handleActivity = () => {
       pointer.current.activeAt = performance.now();
     };
     const handleMove = (e: PointerEvent) => {
       handleActivity();
-      const rect = container.current?.getBoundingClientRect();
-      if (!rect) return;
-      pointer.current.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
-      pointer.current.y = -(((e.clientY - rect.top) / rect.height) * 2 - 1);
-      pointer.current.active = true;
+      if (aim(e)) pointer.current.active = true;
     };
     const handleLeave = () => {
       pointer.current.active = false;
     };
+    const handleTap = (e: PointerEvent) => {
+      if (e.pointerType === "touch" && aim(e)) pointer.current.lookUntil = performance.now() + TAP_LOOK_TIME;
+    };
+    const handleScroll = () => {
+      pointer.current.scrollY = window.scrollY;
+    };
     const activityEvents = ["pointerdown", "keydown", "wheel", "scroll"] as const;
     window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerdown", handleTap);
     for (const type of activityEvents) window.addEventListener(type, handleActivity, { passive: true });
     document.documentElement.addEventListener("pointerleave", handleLeave);
+    if (touchScreen) {
+      handleScroll();
+      window.addEventListener("scroll", handleScroll, { passive: true });
+    }
     return () => {
       window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerdown", handleTap);
       for (const type of activityEvents) window.removeEventListener(type, handleActivity);
       document.documentElement.removeEventListener("pointerleave", handleLeave);
+      window.removeEventListener("scroll", handleScroll);
     };
   }, []);
 
