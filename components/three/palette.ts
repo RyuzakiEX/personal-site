@@ -1,4 +1,4 @@
-import type { Tab } from "@/app/page";
+import type { Tab } from "@/lib/tabs";
 
 // Mirrors the theme colors in tailwind.config.ts.
 export const COLORS = {

@@ -2,14 +2,7 @@
 
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import type { Tab } from "@/app/page";
-
-const tabs: { id: Tab; label: string }[] = [
-  { id: "about", label: "About Me" },
-  { id: "experience", label: "Experience" },
-  { id: "projects", label: "Projects" },
-  { id: "contact", label: "Contact" },
-];
+import { TAB_ORDER, TABS, type Tab } from "@/lib/tabs";
 
 interface NavbarProps {
   activeTab: Tab;
@@ -19,7 +12,11 @@ interface NavbarProps {
 export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSelect = (tab: Tab) => {
+  // Real links, so crawlers can follow them and modified clicks open a new
+  // browser tab. A plain click switches tabs in place instead.
+  const handleClick = (e: React.MouseEvent, tab: Tab) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    e.preventDefault();
     onTabChange(tab);
     setIsOpen(false);
   };
@@ -32,18 +29,20 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         </span>
 
         <div className="hidden md:flex gap-1">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
+          {TAB_ORDER.map((tab) => (
+            <a
+              key={tab}
+              href={TABS[tab].path}
+              aria-current={activeTab === tab ? "page" : undefined}
+              onClick={(e) => handleClick(e, tab)}
               className={`nav-tab ${
-                activeTab === tab.id
+                activeTab === tab
                   ? "nav-tab-active"
                   : "text-gray-400 hover:text-white"
               }`}
             >
-              {tab.label}
-            </button>
+              {TABS[tab].label}
+            </a>
           ))}
         </div>
 
@@ -64,18 +63,20 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
         }`}
       >
         <div className="px-4 pb-4 pt-2 flex flex-col gap-1 border-t border-navy-800/60">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => handleSelect(tab.id)}
+          {TAB_ORDER.map((tab) => (
+            <a
+              key={tab}
+              href={TABS[tab].path}
+              aria-current={activeTab === tab ? "page" : undefined}
+              onClick={(e) => handleClick(e, tab)}
               className={`nav-tab text-left border-b-0 border-l-2 ${
-                activeTab === tab.id
+                activeTab === tab
                   ? "text-cyan-glow border-cyan-glow"
                   : "text-gray-400 hover:text-white border-transparent"
               }`}
             >
-              {tab.label}
-            </button>
+              {TABS[tab].label}
+            </a>
           ))}
         </div>
       </div>
