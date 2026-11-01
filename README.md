@@ -79,6 +79,7 @@ components/
     Robot.tsx           Model, cursor tracking, gestures, faces and idle behavior
     sceneState.ts       Shared state the DOM writes and the scene reads each frame
     palette.ts          Theme colors and per-tab accents
+    model.ts            Robot model URL, shared with the layout's preload
   ui/                   Badge, Card, IntroOverlay, SocialIcon
 data/                   Experience, projects and certificates content
 hooks/

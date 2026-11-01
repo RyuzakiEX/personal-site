@@ -4,12 +4,10 @@ import { useCursor, useGLTF } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
 import type { Tab } from "@/lib/tabs";
+import { ROBOT_URL } from "./model";
 import { COLORS, TAB_ACCENTS } from "./palette";
 import { sceneState, type Reaction } from "./sceneState";
 
-// RobotExpressive by Tomás Laulhé (CC0 1.0), with expressions by Don McCurdy.
-// https://github.com/mrdoob/three.js/tree/dev/examples/models/gltf/RobotExpressive
-export const ROBOT_URL = "/models/robot-expressive.glb";
 export const ROBOT_HEIGHT = 3;
 // Stages up to this wide are the small mobile card.
 export const COMPACT_MAX_WIDTH = 240;

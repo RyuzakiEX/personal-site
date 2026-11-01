@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Rajdhani, Exo_2 } from "next/font/google";
 import "./globals.css";
 import { HOME_TITLE, SITE_NAME, SITE_URL, TABS } from "@/lib/tabs";
+import { ROBOT_URL } from "@/components/three/model";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
@@ -68,7 +69,7 @@ export default function RootLayout({
         {/* Fetch the robot model alongside the page's JavaScript, not after it */}
         <link
           rel="preload"
-          href="/models/robot-expressive.glb"
+          href={ROBOT_URL}
           as="fetch"
           crossOrigin="anonymous"
         />
