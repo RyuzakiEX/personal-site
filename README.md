@@ -7,7 +7,7 @@ It is a Next.js app with four sections (About Me, Experience, Projects and Conta
 ## Features
 
 - **Interactive 3D robot.** Built with React Three Fiber. It follows the cursor across the whole page and plays a gesture when each tab opens. Clicking it makes it react, and if you click it too many times in a row it gets annoyed. When left alone it fidgets, and after a while it sits down. It also reacts to page events: it dances when a contact message is sent, shakes its head when the form has errors, and gives a thumbs-up when you hover over a project.
-- **3D transitions.** Each tab gets its own camera angle and accent color for the rim light, visor and background glow. On first load the camera dollies in and the visor powers on. Sections turn like the faces of a cube, and project cards tilt toward the cursor.
+- **3D transitions.** Each tab gets its own camera angle and accent color for the rim light, visor and background glow. On first load the camera dollies in and the visor powers on. Sections turn like the faces of a cube.
 - **Intro overlay.** The page stays hidden until the 3D scene has rendered, so the content and the robot appear together. If the scene takes longer than 4 seconds, the page is shown anyway.
 - **Graceful fallback.** Browsers without WebGL and visitors who prefer reduced motion get a static orb instead of the robot, and section changes become plain fades.
 - **Responsive layout.** On large screens the robot sits in a sticky column beside the content. On small screens it shrinks to a frosted card in the bottom-left corner that lets taps pass through.
@@ -65,7 +65,7 @@ The rest of the site works without them; only sending the contact form will fail
 ```
 app/
   [[...tab]]/page.tsx   One static page per tab, with its metadata
-  layout.tsx            Fonts (Rajdhani, Exo 2), site metadata, JSON-LD, robot model preload
+  layout.tsx            Font (Rajdhani), site metadata, JSON-LD, robot model preload
   opengraph-image.tsx   Link preview card shown when the site is shared
   sitemap.ts, robots.ts
   api/contact/route.ts  Validates the form and sends the email via Resend
@@ -79,11 +79,11 @@ components/
     Robot.tsx           Model, cursor tracking, gestures, faces and idle behavior
     sceneState.ts       Shared state the DOM writes and the scene reads each frame
     palette.ts          Theme colors and per-tab accents
-  ui/                   Badge, Card, IntroOverlay, SocialIcon
+    model.ts            Robot model URL, shared with the layout's preload
+  ui/                   Badge, Card, IntroOverlay, SectionTitle, SocialIcon
 data/                   Experience, projects and certificates content
 hooks/
   use3DEnabled.ts       Checks for WebGL and reduced motion
-  useTilt.ts            Cursor-driven card tilt
 lib/
   tabs.ts               Tab order, paths, titles and descriptions, site URL
                         Plus motion presets, class helpers, Zod schemas

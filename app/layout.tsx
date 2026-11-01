@@ -1,18 +1,13 @@
 import type { Metadata } from "next";
-import { Rajdhani, Exo_2 } from "next/font/google";
+import { Rajdhani } from "next/font/google";
 import "./globals.css";
 import { HOME_TITLE, SITE_NAME, SITE_URL, TABS } from "@/lib/tabs";
+import { ROBOT_URL } from "@/components/three/model";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
   weight: ["300", "400", "500", "600", "700"],
   variable: "--font-rajdhani",
-});
-
-const exo2 = Exo_2({
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600", "700"],
-  variable: "--font-exo2",
 });
 
 export const metadata: Metadata = {
@@ -63,12 +58,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${rajdhani.variable} ${exo2.variable}`}>
+    <html lang="en" className={`${rajdhani.variable}`}>
       <head>
         {/* Fetch the robot model alongside the page's JavaScript, not after it */}
         <link
           rel="preload"
-          href="/models/robot-expressive.glb"
+          href={ROBOT_URL}
           as="fetch"
           crossOrigin="anonymous"
         />

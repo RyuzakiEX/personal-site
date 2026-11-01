@@ -10,25 +10,27 @@ import { flipIn } from "@/lib/motion";
 
 const TITLE = "Full Stack Developer";
 
+// Every technology across all roles, once each.
+const TECH_STACK = Array.from(new Set(experiences.flatMap((e) => e.stack)));
+
 const MONTH_MAP: Record<string, number> = {
   Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
   Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 };
 
-function getExperienceDuration(): string {
-  const starts = experiences.map((e) => {
-    const [mon, year] = e.period.split(" – ")[0].split(" ");
-    return new Date(parseInt(year), MONTH_MAP[mon]);
-  });
-  const earliest = new Date(Math.min(...starts.map((d) => d.getTime())));
-  const now = new Date();
-  const totalMonths =
-    (now.getFullYear() - earliest.getFullYear()) * 12 +
-    (now.getMonth() - earliest.getMonth());
-  const years = Math.floor(totalMonths / 12);
-  const months = totalMonths % 12;
-  if (months === 0) return `${years}+ years`;
-  return `${years}+ years`;
+// Months since year 0 that the earliest role started, from periods like
+// "Mar 2023 – May 2024".
+const EARLIEST_START = Math.min(
+  ...experiences.map((e) => {
+    const [month, year] = e.period.split(" – ")[0].split(" ");
+    return Number(year) * 12 + MONTH_MAP[month];
+  })
+);
+
+// UTC, so the server and every visitor's timezone count the same months.
+function getExperienceDuration(now: Date): string {
+  const months = now.getUTCFullYear() * 12 + now.getUTCMonth() - EARLIEST_START;
+  return `${Math.floor(months / 12)}+ years`;
 }
 
 function GithubIcon() {
@@ -56,18 +58,20 @@ function WhatsappIcon() {
 }
 
 export default function AboutMe() {
-  const [displayed, setDisplayed] = useState("");
-  const [idx, setIdx] = useState(0);
+  const [typed, setTyped] = useState(0);
+  // The page is prerendered, so start from the build date to match its HTML,
+  // then recount in case a work anniversary has passed since the last deploy.
+  const [duration, setDuration] = useState(() =>
+    getExperienceDuration(new Date(process.env.BUILD_DATE!))
+  );
 
   useEffect(() => {
-    if (idx < TITLE.length) {
-      const t = setTimeout(() => {
-        setDisplayed((prev) => prev + TITLE[idx]);
-        setIdx((i) => i + 1);
-      }, 80);
-      return () => clearTimeout(t);
-    }
-  }, [idx]);
+    if (typed >= TITLE.length) return;
+    const t = setTimeout(() => setTyped((n) => n + 1), 80);
+    return () => clearTimeout(t);
+  }, [typed]);
+
+  useEffect(() => setDuration(getExperienceDuration(new Date())), []);
 
   return (
     <section className="space-y-12">
@@ -107,7 +111,7 @@ export default function AboutMe() {
         >
           {/* The typing needs JavaScript; without it, show the whole title. */}
           <noscript>{TITLE}</noscript>
-          {displayed}
+          {TITLE.slice(0, typed)}
           <span className="animate-flicker text-cyan-glow ml-0.5">|</span>
         </motion.p>
 
@@ -119,7 +123,7 @@ export default function AboutMe() {
         >
           A full-stack developer with{" "}
           <span className="text-cyan-glow font-semibold">
-            {getExperienceDuration()}
+            {duration}
           </span>{" "}
           of experience — building fast, scalable web apps that people actually
           enjoy using, from pixel-perfect UIs to solid backend APIs.
@@ -155,35 +159,24 @@ export default function AboutMe() {
         </motion.div>
       </div>
 
-      {/* Certificates — hidden for now
-      <div>
-        <h2 className="text-xl font-semibold text-gray-300 uppercase tracking-widest mb-6 border-l-2 border-cyan-glow pl-3">
-          Certificates
-        </h2>
-        ...
-      </div>
-      */}
-
       {/* Tech Stack */}
       <div>
         <h2 className="text-xl font-semibold text-gray-300 uppercase tracking-widest mb-6 border-l-2 border-cyan-glow pl-3">
           Tech Stack
         </h2>
         <div className="flex flex-wrap gap-2">
-          {Array.from(new Set(experiences.flatMap((e) => e.stack))).map(
-            (tech, i) => (
-              <motion.span
-                key={tech}
-                variants={flipIn}
-                initial="hidden"
-                animate="visible"
-                custom={0.6 + i * 0.04}
-                className="inline-block px-3 py-1.5 bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow text-sm rounded-full font-medium"
-              >
-                {tech}
-              </motion.span>
-            )
-          )}
+          {TECH_STACK.map((tech, i) => (
+            <motion.span
+              key={tech}
+              variants={flipIn}
+              initial="hidden"
+              animate="visible"
+              custom={0.6 + i * 0.04}
+              className="inline-block px-3 py-1.5 bg-cyan-glow/10 border border-cyan-glow/30 text-cyan-glow text-sm rounded-full font-medium"
+            >
+              {tech}
+            </motion.span>
+          ))}
         </div>
       </div>
     </section>
