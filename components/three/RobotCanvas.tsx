@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { ContactShadows, Environment, Lightformer } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
-import type { Tab } from "@/app/page";
+import type { Tab } from "@/lib/tabs";
 import Robot, { COMPACT_MAX_WIDTH, ROBOT_HEIGHT, type PointerState } from "./Robot";
 import { COLORS, TAB_ACCENTS } from "./palette";
 

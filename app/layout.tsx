@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Rajdhani, Exo_2 } from "next/font/google";
 import "./globals.css";
+import { HOME_TITLE, SITE_NAME, SITE_URL, TABS } from "@/lib/tabs";
 
 const rajdhani = Rajdhani({
   subsets: ["latin"],
@@ -15,9 +16,26 @@ const exo2 = Exo_2({
 });
 
 export const metadata: Metadata = {
-  title: "Jorge Adanza — Full Stack Developer",
-  description:
-    "Portfolio of Jorge Adanza, Full Stack Developer specializing in modern web technologies.",
+  metadataBase: new URL(SITE_URL),
+  title: HOME_TITLE,
+  description: TABS.about.description,
+  authors: [{ name: SITE_NAME, url: SITE_URL }],
+};
+
+// Tells search engines who the site is about and links the profiles that
+// belong to the same person.
+const personJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: SITE_NAME,
+  alternateName: "Jorge Gabriel Adrian Adanza",
+  jobTitle: "Full Stack Developer",
+  url: SITE_URL,
+  image: `${SITE_URL}/profile-picture.jpeg`,
+  sameAs: [
+    "https://linkedin.com/in/jorge-gabriel-adrian-adanza-770656193",
+    "https://github.com/RyuzakiEX",
+  ],
 };
 
 export default function RootLayout({
@@ -34,6 +52,10 @@ export default function RootLayout({
           href="/models/robot-expressive.glb"
           as="fetch"
           crossOrigin="anonymous"
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(personJsonLd) }}
         />
       </head>
       <body className="antialiased">{children}</body>

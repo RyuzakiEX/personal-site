@@ -2,7 +2,7 @@
 
 My portfolio site, live at **[jorgeadanza.vercel.app](https://jorgeadanza.vercel.app/)**.
 
-It is a single-page Next.js app with four sections (About Me, Experience, Projects and Contact) next to an interactive 3D robot that watches the cursor and reacts to what you do on the page.
+It is a Next.js app with four sections (About Me, Experience, Projects and Contact), each at its own URL, next to an interactive 3D robot that watches the cursor and reacts to what you do on the page.
 
 ## Features
 
@@ -12,6 +12,8 @@ It is a single-page Next.js app with four sections (About Me, Experience, Projec
 - **Graceful fallback.** Browsers without WebGL and visitors who prefer reduced motion get a static orb instead of the robot, and section changes become plain fades.
 - **Responsive layout.** On large screens the robot sits in a sticky column beside the content. On small screens it shrinks to a frosted card in the bottom-left corner that lets taps pass through.
 - **Contact form.** Validated with React Hook Form and Zod on the client and again in the API route, then sent as a styled email through [Resend](https://resend.com).
+- **Linkable sections.** Each section has its own path (`/`, `/experience`, `/projects`, `/contact`) with its own title and description. Switching tabs updates the URL without reloading the page, so the robot and transitions carry on, and the back button, refreshes and shared links all land on the right section.
+- **SEO and link previews.** Every page has Open Graph and Twitter tags pointing at a generated preview card, plus a canonical URL. The site also serves `sitemap.xml`, `robots.txt` and JSON-LD `Person` data.
 - **Years of experience.** The total on About Me is calculated from the earliest start date in `data/experience.ts`, so it stays current without manual edits.
 
 ## Tech stack
@@ -62,10 +64,13 @@ The rest of the site works without them; only sending the contact form will fail
 
 ```
 app/
-  page.tsx              Tab state, intro reveal and cube section transitions
-  layout.tsx            Fonts (Rajdhani, Exo 2), metadata, robot model preload
+  [[...tab]]/page.tsx   One static page per tab, with its metadata
+  layout.tsx            Fonts (Rajdhani, Exo 2), site metadata, JSON-LD, robot model preload
+  opengraph-image.tsx   Link preview card shown when the site is shared
+  sitemap.ts, robots.ts
   api/contact/route.ts  Validates the form and sends the email via Resend
 components/
+  Home.tsx              Tab from the URL, intro reveal and cube section transitions
   Navbar.tsx
   RobotStage.tsx        Sticky column / mobile card hosting the 3D canvas
   sections/             AboutMe, Experience, Projects, Contact
@@ -79,7 +84,9 @@ data/                   Experience, projects and certificates content
 hooks/
   use3DEnabled.ts       Checks for WebGL and reduced motion
   useTilt.ts            Cursor-driven card tilt
-lib/                    Motion presets, class helpers, Zod schemas
+lib/
+  tabs.ts               Tab order, paths, titles and descriptions, site URL
+                        Plus motion presets, class helpers, Zod schemas
 public/
   models/robot-expressive.glb
   Jorge-Gabriel-Adrian-Adanza-CV-v3.pdf

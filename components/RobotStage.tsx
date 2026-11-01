@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import type { Tab } from "@/app/page";
+import type { Tab } from "@/lib/tabs";
 import { cn } from "@/lib/utils";
 import { TAB_ACCENTS } from "@/components/three/palette";
 

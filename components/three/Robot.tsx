@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useCursor, useGLTF } from "@react-three/drei";
 import { easing } from "maath";
 import * as THREE from "three";
-import type { Tab } from "@/app/page";
+import type { Tab } from "@/lib/tabs";
 import { COLORS, TAB_ACCENTS } from "./palette";
 import { sceneState, type Reaction } from "./sceneState";
 

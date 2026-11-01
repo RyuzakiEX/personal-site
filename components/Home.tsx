@@ -8,6 +8,7 @@ import {
   useReducedMotion,
   type Variants,
 } from "framer-motion";
+import { usePathname } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import RobotStage from "@/components/RobotStage";
 import IntroOverlay from "@/components/ui/IntroOverlay";
@@ -16,12 +17,7 @@ import Experience from "@/components/sections/Experience";
 import Projects from "@/components/sections/Projects";
 import Contact from "@/components/sections/Contact";
 import { use3DEnabled } from "@/hooks/use3DEnabled";
-
-export type Tab = "about" | "experience" | "projects" | "contact";
-
-// Navbar order. Moving to a later tab turns the content one way, an earlier
-// tab the other.
-const TAB_ORDER: Tab[] = ["about", "experience", "projects", "contact"];
+import { TAB_ORDER, TABS, tabFromPath, type Tab } from "@/lib/tabs";
 
 const sections: Record<Tab, React.ComponentType> = {
   about: AboutMe,
@@ -64,7 +60,15 @@ const fadeVariants: Variants = {
 };
 
 export default function Home() {
-  const [[activeTab, direction], setTab] = useState<[Tab, number]>(["about", 1]);
+  // The URL is the source of truth, so links, refreshes and back/forward all
+  // land on the right tab.
+  const activeTab = tabFromPath(usePathname());
+  const [previousTab, setPreviousTab] = useState(activeTab);
+  const [direction, setDirection] = useState(1);
+  if (activeTab !== previousTab) {
+    setDirection(TAB_ORDER.indexOf(activeTab) > TAB_ORDER.indexOf(previousTab) ? 1 : -1);
+    setPreviousTab(activeTab);
+  }
   const reduceMotion = useReducedMotion();
   const enable3D = use3DEnabled();
   const [sceneReady, setSceneReady] = useState(false);
@@ -72,12 +76,18 @@ export default function Home() {
   const handleSceneReady = useCallback(() => setSceneReady(true), []);
   const ActiveSection = sections[activeTab];
 
+  // pushState, not router.push: Next keeps usePathname in sync with it, and
+  // the page stays mounted, so the robot doesn't reload between tabs.
   const handleTabChange = useCallback((tab: Tab) => {
-    setTab(([current, currentDirection]) => {
-      if (tab === current) return [current, currentDirection];
-      return [tab, TAB_ORDER.indexOf(tab) > TAB_ORDER.indexOf(current) ? 1 : -1];
-    });
+    if (window.location.pathname !== TABS[tab].path) {
+      window.history.pushState(null, "", TABS[tab].path);
+    }
   }, []);
+
+  // Metadata only sets the title on a full page load.
+  useEffect(() => {
+    document.title = TABS[activeTab].title;
+  }, [activeTab]);
 
   useEffect(() => {
     const timer = setTimeout(() => setTimedOut(true), MAX_INTRO_MS);
