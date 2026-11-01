@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import Card from "@/components/ui/Card";
+import SectionTitle from "@/components/ui/SectionTitle";
 import Badge from "@/components/ui/Badge";
 import { experiences } from "@/data/experience";
 import { flipIn } from "@/lib/motion";
@@ -9,9 +10,7 @@ import { flipIn } from "@/lib/motion";
 export default function Experience() {
   return (
     <section className="space-y-6">
-      <h2 className="text-2xl font-bold glow-text tracking-widest uppercase">
-        Experience
-      </h2>
+      <SectionTitle>Experience</SectionTitle>
       {experiences.map((exp, i) => (
         <motion.div
           key={i}

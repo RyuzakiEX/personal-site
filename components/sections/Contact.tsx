@@ -7,12 +7,20 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Send, CheckCircle, XCircle, MessageCircle } from "lucide-react";
 import { contactSchema, type ContactFormData } from "@/lib/validations";
 import Card from "@/components/ui/Card";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { react, setListening } from "@/components/three/sceneState";
 import { flipIn } from "@/lib/motion";
 
 type SubmitState = "idle" | "loading" | "success" | "error";
 
 const GENERIC_ERROR = "Something went wrong. Please try again.";
+
+const inputClass =
+  "w-full bg-navy-950/80 border border-navy-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-cyan-glow/60 focus:shadow-glow transition-all duration-200";
+
+function ErrorText({ message }: { message?: string }) {
+  return message ? <p className="text-red-400 text-xs mt-1">{message}</p> : null;
+}
 
 export default function Contact() {
   const [submitState, setSubmitState] = useState<SubmitState>("idle");
@@ -74,14 +82,9 @@ export default function Contact() {
       .catch(() => {});
   }, []);
 
-  const inputClass =
-    "w-full bg-navy-950/80 border border-navy-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-cyan-glow/60 focus:shadow-glow transition-all duration-200";
-
   return (
     <section className="max-w-2xl mx-auto space-y-6">
-      <h2 className="text-2xl font-bold glow-text tracking-widest uppercase">
-        Contact Me
-      </h2>
+      <SectionTitle>Contact Me</SectionTitle>
       <motion.div variants={flipIn} initial="hidden" animate="visible" custom={0.25}>
         <Card>
           {/* Sending needs JavaScript; a plain submit would only reload the
@@ -119,11 +122,7 @@ export default function Contact() {
                   placeholder="Name"
                   className={inputClass}
                 />
-                {errors.name && (
-                  <p className="text-red-400 text-xs mt-1">
-                    {errors.name.message}
-                  </p>
-                )}
+                <ErrorText message={errors.name?.message} />
               </div>
               <div>
                 <input
@@ -132,11 +131,7 @@ export default function Contact() {
                   type="email"
                   className={inputClass}
                 />
-                {errors.email && (
-                  <p className="text-red-400 text-xs mt-1">
-                    {errors.email.message}
-                  </p>
-                )}
+                <ErrorText message={errors.email?.message} />
               </div>
             </div>
             <div>
@@ -145,11 +140,7 @@ export default function Contact() {
                 placeholder="Subject"
                 className={inputClass}
               />
-              {errors.subject && (
-                <p className="text-red-400 text-xs mt-1">
-                  {errors.subject.message}
-                </p>
-              )}
+              <ErrorText message={errors.subject?.message} />
             </div>
             <div>
               <textarea
@@ -158,11 +149,7 @@ export default function Contact() {
                 rows={5}
                 className={`${inputClass} resize-none`}
               />
-              {errors.message && (
-                <p className="text-red-400 text-xs mt-1">
-                  {errors.message.message}
-                </p>
-              )}
+              <ErrorText message={errors.message?.message} />
             </div>
 
             <button

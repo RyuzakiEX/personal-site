@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { motion } from "framer-motion";
 import { ExternalLink } from "lucide-react";
 import Badge from "@/components/ui/Badge";
+import SectionTitle from "@/components/ui/SectionTitle";
 import { react, setHoveredProject } from "@/components/three/sceneState";
 import { projects, type ProjectEntry } from "@/data/projects";
 
@@ -98,9 +99,7 @@ export default function Projects() {
 
   return (
     <section className="space-y-6">
-      <h2 className="text-2xl font-bold glow-text tracking-widest uppercase">
-        Projects
-      </h2>
+      <SectionTitle>Projects</SectionTitle>
       {/* The section's cube turn already brings it in, so the table only
           needs a short fade, not a delayed flip. */}
       <motion.div
