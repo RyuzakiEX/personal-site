@@ -23,7 +23,7 @@ const config: Config = {
         },
       },
       fontFamily: {
-        futuristic: ["var(--font-rajdhani)", "var(--font-exo2)", "sans-serif"],
+        futuristic: ["var(--font-rajdhani)", "sans-serif"],
       },
       boxShadow: {
         glow: "0 0 12px 2px rgba(0, 212, 255, 0.35)",

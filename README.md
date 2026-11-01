@@ -65,7 +65,7 @@ The rest of the site works without them; only sending the contact form will fail
 ```
 app/
   [[...tab]]/page.tsx   One static page per tab, with its metadata
-  layout.tsx            Fonts (Rajdhani, Exo 2), site metadata, JSON-LD, robot model preload
+  layout.tsx            Font (Rajdhani), site metadata, JSON-LD, robot model preload
   opengraph-image.tsx   Link preview card shown when the site is shared
   sitemap.ts, robots.ts
   api/contact/route.ts  Validates the form and sends the email via Resend
