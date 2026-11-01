@@ -17,6 +17,9 @@ const securityHeaders = [
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Inlined on both server and client, so prerendered pages and hydration
+  // agree on values that depend on the date.
+  env: { BUILD_DATE: new Date().toISOString() },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

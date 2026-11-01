@@ -15,20 +15,19 @@ const MONTH_MAP: Record<string, number> = {
   Jul: 6, Aug: 7, Sep: 8, Oct: 9, Nov: 10, Dec: 11,
 };
 
-function getExperienceDuration(): string {
-  const starts = experiences.map((e) => {
-    const [mon, year] = e.period.split(" – ")[0].split(" ");
-    return new Date(parseInt(year), MONTH_MAP[mon]);
-  });
-  const earliest = new Date(Math.min(...starts.map((d) => d.getTime())));
-  const now = new Date();
-  const totalMonths =
-    (now.getFullYear() - earliest.getFullYear()) * 12 +
-    (now.getMonth() - earliest.getMonth());
-  const years = Math.floor(totalMonths / 12);
-  const months = totalMonths % 12;
-  if (months === 0) return `${years}+ years`;
-  return `${years}+ years`;
+// Months since year 0 that the earliest role started, from periods like
+// "Mar 2023 – May 2024".
+const EARLIEST_START = Math.min(
+  ...experiences.map((e) => {
+    const [month, year] = e.period.split(" – ")[0].split(" ");
+    return Number(year) * 12 + MONTH_MAP[month];
+  })
+);
+
+// UTC, so the server and every visitor's timezone count the same months.
+function getExperienceDuration(now: Date): string {
+  const months = now.getUTCFullYear() * 12 + now.getUTCMonth() - EARLIEST_START;
+  return `${Math.floor(months / 12)}+ years`;
 }
 
 function GithubIcon() {
@@ -58,6 +57,11 @@ function WhatsappIcon() {
 export default function AboutMe() {
   const [displayed, setDisplayed] = useState("");
   const [idx, setIdx] = useState(0);
+  // The page is prerendered, so start from the build date to match its HTML,
+  // then recount in case a work anniversary has passed since the last deploy.
+  const [duration, setDuration] = useState(() =>
+    getExperienceDuration(new Date(process.env.BUILD_DATE!))
+  );
 
   useEffect(() => {
     if (idx < TITLE.length) {
@@ -68,6 +72,8 @@ export default function AboutMe() {
       return () => clearTimeout(t);
     }
   }, [idx]);
+
+  useEffect(() => setDuration(getExperienceDuration(new Date())), []);
 
   return (
     <section className="space-y-12">
@@ -119,7 +125,7 @@ export default function AboutMe() {
         >
           A full-stack developer with{" "}
           <span className="text-cyan-glow font-semibold">
-            {getExperienceDuration()}
+            {duration}
           </span>{" "}
           of experience — building fast, scalable web apps that people actually
           enjoy using, from pixel-perfect UIs to solid backend APIs.
