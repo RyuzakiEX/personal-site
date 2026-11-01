@@ -104,7 +104,7 @@ export default function Home() {
     <div className="min-h-screen overflow-x-clip">
       <IntroOverlay visible={!revealed} />
       <Navbar activeTab={activeTab} onTabChange={handleTabChange} />
-      <div className="max-w-7xl mx-auto px-4 pt-24 pb-44 lg:pb-16 lg:grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-12">
+      <div data-page-body className="max-w-7xl mx-auto px-4 pt-24 pb-44 lg:pb-16 lg:grid lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1fr)] lg:gap-12">
         <RobotStage
           activeTab={activeTab}
           enable3D={enable3D}

@@ -27,6 +27,7 @@ interface RobotStageProps {
 export default function RobotStage({ activeTab, enable3D, revealed, onReady }: RobotStageProps) {
   return (
     <aside
+      data-robot-stage
       aria-hidden
       className={cn(
         "pointer-events-none fixed bottom-4 left-4 z-40 h-32 w-24 overflow-hidden rounded-2xl border border-navy-800 bg-navy-950/80 shadow-glow backdrop-blur-md transition-opacity duration-700 [@media(hover:none)]:pointer-events-auto",
