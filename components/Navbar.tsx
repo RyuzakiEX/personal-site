@@ -22,7 +22,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
   };
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/80 backdrop-blur-lg border-b border-navy-800/60">
+    <nav data-site-nav className="fixed top-0 left-0 right-0 z-50 bg-navy-950/80 backdrop-blur-lg border-b border-navy-800/60">
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between h-16">
         <span className="glow-text text-base sm:text-lg font-bold tracking-[0.2em] uppercase">
           Jorge Adanza
@@ -48,6 +48,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
 
         <button
           type="button"
+          data-menu-toggle
           aria-label="Toggle navigation menu"
           aria-expanded={isOpen}
           onClick={() => setIsOpen((prev) => !prev)}
@@ -58,6 +59,7 @@ export default function Navbar({ activeTab, onTabChange }: NavbarProps) {
       </div>
 
       <div
+        data-mobile-menu
         className={`md:hidden overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${
           isOpen ? "max-h-80 opacity-100" : "max-h-0 opacity-0"
         }`}

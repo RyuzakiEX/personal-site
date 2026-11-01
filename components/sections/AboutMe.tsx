@@ -105,6 +105,8 @@ export default function AboutMe() {
           transition={{ delay: 0.3, duration: 0.4 }}
           className="text-2xl text-gray-300 font-light tracking-[0.15em] h-8"
         >
+          {/* The typing needs JavaScript; without it, show the whole title. */}
+          <noscript>{TITLE}</noscript>
           {displayed}
           <span className="animate-flicker text-cyan-glow ml-0.5">|</span>
         </motion.p>

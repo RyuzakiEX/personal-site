@@ -84,7 +84,17 @@ export default function Contact() {
       </h2>
       <motion.div variants={flipIn} initial="hidden" animate="visible" custom={0.25}>
         <Card>
+          {/* Sending needs JavaScript; a plain submit would only reload the
+              page with the visitor's details in the URL. */}
+          <noscript>
+            <p className="text-gray-400 text-sm">
+              The contact form needs JavaScript. You can still reach me on
+              WhatsApp below or through LinkedIn.
+            </p>
+          </noscript>
           <form
+            data-js-only
+            method="post"
             onSubmit={handleSubmit(onSubmit, () => react("invalid"))}
             onFocus={() => setListening(true)}
             onBlur={() => setListening(false)}
