@@ -18,8 +18,20 @@ const GENERIC_ERROR = "Something went wrong. Please try again.";
 const inputClass =
   "w-full bg-navy-950/80 border border-navy-800 rounded-lg px-4 py-3 text-white placeholder-gray-500 text-sm focus:outline-none focus:border-cyan-glow/60 focus:shadow-glow transition-all duration-200";
 
-function ErrorText({ message }: { message?: string }) {
-  return message ? <p className="text-red-400 text-xs mt-1">{message}</p> : null;
+const labelClass =
+  "block mb-1.5 text-xs font-semibold tracking-widest uppercase text-gray-400";
+
+type FieldName = keyof ContactFormData;
+
+const fieldId = (name: FieldName) => `contact-${name}`;
+const errorId = (name: FieldName) => `contact-${name}-error`;
+
+function ErrorText({ id, message }: { id: string; message?: string }) {
+  return message ? (
+    <p id={id} className="text-red-400 text-xs mt-1">
+      {message}
+    </p>
+  ) : null;
 }
 
 export default function Contact() {
@@ -38,6 +50,20 @@ export default function Contact() {
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
   });
+
+  // Ties each input to its label and, once it fails validation, to its error
+  // message, so screen readers announce both.
+  const fieldProps = (name: FieldName) => ({
+    ...register(name),
+    id: fieldId(name),
+    "aria-required": true,
+    "aria-invalid": errors[name] ? true : undefined,
+    "aria-describedby": errors[name] ? errorId(name) : undefined,
+  });
+
+  const fieldError = (name: FieldName) => (
+    <ErrorText id={errorId(name)} message={errors[name]?.message} />
+  );
 
   const onSubmit = async (data: ContactFormData) => {
     setSubmitState("loading");
@@ -117,39 +143,48 @@ export default function Contact() {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
+                <label htmlFor={fieldId("name")} className={labelClass}>
+                  Name
+                </label>
                 <input
-                  {...register("name")}
-                  placeholder="Name"
+                  {...fieldProps("name")}
+                  autoComplete="name"
                   className={inputClass}
                 />
-                <ErrorText message={errors.name?.message} />
+                {fieldError("name")}
               </div>
               <div>
+                <label htmlFor={fieldId("email")} className={labelClass}>
+                  Email
+                </label>
                 <input
-                  {...register("email")}
-                  placeholder="Email"
+                  {...fieldProps("email")}
                   type="email"
+                  autoComplete="email"
+                  placeholder="you@example.com"
                   className={inputClass}
                 />
-                <ErrorText message={errors.email?.message} />
+                {fieldError("email")}
               </div>
             </div>
             <div>
-              <input
-                {...register("subject")}
-                placeholder="Subject"
-                className={inputClass}
-              />
-              <ErrorText message={errors.subject?.message} />
+              <label htmlFor={fieldId("subject")} className={labelClass}>
+                Subject
+              </label>
+              <input {...fieldProps("subject")} className={inputClass} />
+              {fieldError("subject")}
             </div>
             <div>
+              <label htmlFor={fieldId("message")} className={labelClass}>
+                Message
+              </label>
               <textarea
-                {...register("message")}
-                placeholder="Your message..."
+                {...fieldProps("message")}
+                placeholder="What would you like to talk about?"
                 rows={5}
                 className={`${inputClass} resize-none`}
               />
-              <ErrorText message={errors.message?.message} />
+              {fieldError("message")}
             </div>
 
             <button
@@ -163,6 +198,24 @@ export default function Contact() {
           </form>
         </Card>
       </motion.div>
+
+      {/* Stays mounted so screen readers announce the result when it appears,
+          and sits right under the form so it shows without scrolling. While
+          empty it drops its spacing so it doesn't leave a gap. */}
+      <div role="status" className="empty:!mt-0">
+        {submitState === "success" && (
+          <div className="flex items-center gap-3 p-4 bg-green-900/30 border border-green-500/40 rounded-lg text-green-400">
+            <CheckCircle size={18} aria-hidden="true" />
+            Message sent successfully!
+          </div>
+        )}
+        {submitState === "error" && (
+          <div className="flex items-center gap-3 p-4 bg-red-900/30 border border-red-500/40 rounded-lg text-red-400">
+            <XCircle size={18} aria-hidden="true" />
+            {errorMessage}
+          </div>
+        )}
+      </div>
 
       <motion.div
         variants={flipIn}
@@ -187,19 +240,6 @@ export default function Contact() {
           </p>
         </div>
       </motion.div>
-
-      {submitState === "success" && (
-        <div className="flex items-center gap-3 p-4 bg-green-900/30 border border-green-500/40 rounded-lg text-green-400">
-          <CheckCircle size={18} />
-          Message sent successfully!
-        </div>
-      )}
-      {submitState === "error" && (
-        <div className="flex items-center gap-3 p-4 bg-red-900/30 border border-red-500/40 rounded-lg text-red-400">
-          <XCircle size={18} />
-          {errorMessage}
-        </div>
-      )}
     </section>
   );
 }
